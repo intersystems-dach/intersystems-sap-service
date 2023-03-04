@@ -1,6 +1,6 @@
 <img src = "resources/logo.png" title = "logo" width = "40%"/>
 
-# SAPService
+# InterSystems SAP Service
 
 Description
 
