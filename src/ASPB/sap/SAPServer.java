@@ -33,6 +33,24 @@ public class SAPServer implements Server {
         properties = new Properties();
     }
 
+    public SAPServer(Callback<String> callback) {
+        this.callback = callback;
+        server = null;
+        properties = new Properties();
+    }
+
+    public SAPServer(Properties properties, Callback<String> callback) {
+        this.callback = callback;
+        server = null;
+        this.properties = properties;
+    }
+
+    public SAPServer(Properties properties) {
+        this.callback = null;
+        server = null;
+        this.properties = properties;
+    }
+
     @Override
     public void registerCallback(Callback<?> callback) {
         // TODO check if the callback is of the correct type
@@ -45,6 +63,12 @@ public class SAPServer implements Server {
         // Dont start if no callback is registered
         if (callback == null) {
             Logger.error("No callback registered");
+            return false;
+        }
+
+        // chek if all required properties are set
+        if (!checkProperties()) {
+            Logger.error("Not all properties are set");
             return false;
         }
 
@@ -110,7 +134,13 @@ public class SAPServer implements Server {
         });
 
         // Start the server
-        server.start();
+        try {
+            server.start();
+        } catch (Exception e) {
+            // could not start server
+            Logger.error("Could not start the server: " + e.getMessage());
+            return false;
+        }
         return true;
     }
 
@@ -150,5 +180,10 @@ public class SAPServer implements Server {
 
         new MyDestinationDataProvider(properties);
         new MyServerDataProvider(properties);
+    }
+
+    private boolean checkProperties() {
+        // TODO check if all properties are set
+        return true;
     }
 }

@@ -54,11 +54,15 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
         // start the server
 
         server = new TestServer();
+
         server.registerCallback(this);
-        if (server.start())
+        if (server.start()) {
+            Logger.log("SAPService started");
             LOGINFO("SAPService started");
-        else
+        } else {
+            Logger.log("SAPService could not be started");
             LOGERROR("SAPService could not be started");
+        }
     }
 
     @Override
@@ -91,10 +95,13 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
     @Override
     public void OnTearDown() throws Exception {
         // was passiert mit dem buffer wenn der service beendet wird???
-        if (server.stop())
+        if (server.stop()) {
+            Logger.log("SAPService stopped");
             LOGINFO("SAPService stopped");
-        else
+        } else {
+            Logger.log("SAPService could not be stopped");
             LOGERROR("SAPService could not be stopped");
+        }
     }
 
     @Override

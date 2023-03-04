@@ -10,12 +10,18 @@ import ASPB.utils.Callback;
 
 public class GenericFunctionHandler implements JCoServerFunctionHandler {
 
-    public static boolean toJSON = false;
+    public boolean toJSON;
 
     private Callback<String> callback;
 
     public GenericFunctionHandler(Callback<String> callback) {
         this.callback = callback;
+        this.toJSON = false;
+    }
+
+    public GenericFunctionHandler(Callback<String> callback, boolean toJSON) {
+        this.callback = callback;
+        this.toJSON = toJSON;
     }
 
     @Override

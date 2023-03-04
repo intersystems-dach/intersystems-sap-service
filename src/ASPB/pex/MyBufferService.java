@@ -4,12 +4,13 @@ import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 import com.intersystems.jdbc.IRISObject;
 
+import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Server;
 
 public class MyBufferService extends com.intersystems.enslib.pex.BusinessService implements Callback<String> {
 
-    private Buffer buffer = new Buffer();
+    private Buffer<String> buffer = new Buffer<String>(-1);
 
     private Server server;
 
@@ -48,7 +49,7 @@ public class MyBufferService extends com.intersystems.enslib.pex.BusinessService
         boolean result = true;
 
         for (int i = 0; i < max; i++) {
-            String s = buffer.get();
+            String s = buffer.poll();
             /*
              * MyMessage msg = new MyMessage();
              * msg.value = "Message: " + s;
