@@ -5,3 +5,7 @@ NOTES.md
 ideas.md
 **.txt
 .vscode/**
+sap.properties
+*.xml
+.graphml/**
+loginExample.png
