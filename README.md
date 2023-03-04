@@ -32,7 +32,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   2.2 Go to `System Administration` > `Configuration` > `Connectivity` > `External Language Servers`
     -   2.3 You can create a new server by clicking on the `Create External Language Server` button or use the default `%Java Server`. (When you want to create a new server, make sure to select the `Java` language and use java version 1.8 or 11)
     -   2.4 Click on `Start`
--   3 [Register the pex component](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=EPEX_register)
+-   3. [Register the pex component](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=EPEX_register)
     -   3.1 Open the Management Portal
     -   3.2 Go to `Interoperability` > `Configure` > `Production EXtensions Components`
     -   3.3 Click on `Register New Component`
