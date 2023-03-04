@@ -27,7 +27,7 @@ public class Main implements Callback<String> {
     }
 
     @Override
-    public boolean call(String arg0) throws Exception {
+    public boolean call(String arg0) {
         System.out.println("Got here:" + arg0 + "!");
         return true;
     }

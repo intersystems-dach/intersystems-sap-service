@@ -57,7 +57,7 @@ public class MyService extends com.intersystems.enslib.pex.BusinessService imple
     }
 
     @Override
-    public boolean call(String arg0) throws Exception {
+    public boolean call(String arg0) {
         // LOGINFO("Got here1:" + arg0 + "!");
         // return OnProcessInput(arg0);
         /*

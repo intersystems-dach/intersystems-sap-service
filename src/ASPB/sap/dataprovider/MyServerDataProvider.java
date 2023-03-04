@@ -2,8 +2,6 @@ package ASPB.sap.dataprovider;
 
 import java.util.Properties;
 
-//import org.apache.log4j.Logger;
-
 import com.sap.conn.jco.ext.Environment;
 import com.sap.conn.jco.ext.ServerDataEventListener;
 import com.sap.conn.jco.ext.ServerDataProvider;

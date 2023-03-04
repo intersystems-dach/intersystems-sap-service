@@ -8,20 +8,21 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
-import ASPB.pex.TestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Logger;
 import ASPB.utils.Server;
 
 /**
- * A Service to receive messages from a SAP system.
+ * A Service to receive messages from a SAP system and return the message in
+ * JSON
+ * format.
  * 
  * @author Philipp Bonin
  * @version 1.0
  */
-@ClassMetadata(Description = "A Service to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
-public class SAPService extends com.intersystems.enslib.pex.BusinessService implements Callback<String> {
+@ClassMetadata(Description = "A Service to receive messages from a SAP system and return the message in JSON format.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
+public class JSONService extends com.intersystems.enslib.pex.BusinessService implements Callback<String> {
 
     /**
      * *****************************
@@ -32,9 +33,6 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
     // SAP Service
     @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "Set the buisness partner in the production. The outgoing messages will be directed here.")
     public static String BusinessPartner;
-
-    @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled the service will return a JSON object instead of a XML object")
-    public static boolean toJSON = false;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "Set the burst size. If the buffer size is greater than the burst size, the burst size will be used. If the burst size is set to 0, the buffer size will be used.")
     public static int burstSize = 10;
@@ -104,7 +102,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
             Logger.clear();
 
         // start the server
-        server = new TestServer();
+        server = new SAPServer(true, this);
 
         // Set connection properties
         this.setSAPProperties();
@@ -120,7 +118,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
     }
 
     @Override
-    public Object OnProcessInput(Object msg) throws Exception {
+    public Object OnProcessInput(Object arg0) throws Exception {
         // set the burst size
         int burst = buffer.size();
         if (burst > burstSize && burstSize > 0)

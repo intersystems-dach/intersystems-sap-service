@@ -13,6 +13,7 @@ import java.io.FileWriter;
  */
 public abstract class Logger {
 
+    // The log file
     private static File file = null;
 
     /**

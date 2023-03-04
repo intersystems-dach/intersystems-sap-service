@@ -27,28 +27,34 @@ public class SAPServer implements Server {
 
     private Properties properties;
 
-    public SAPServer() {
+    private boolean toJSON;
+
+    public SAPServer(boolean toJSON) {
         callback = null;
         server = null;
         properties = new Properties();
+        this.toJSON = toJSON;
     }
 
-    public SAPServer(Callback<String> callback) {
+    public SAPServer(boolean toJSON, Callback<String> callback) {
         this.callback = callback;
         server = null;
         properties = new Properties();
+        this.toJSON = toJSON;
     }
 
-    public SAPServer(Properties properties, Callback<String> callback) {
+    public SAPServer(boolean toJSON, Properties properties, Callback<String> callback) {
         this.callback = callback;
         server = null;
         this.properties = properties;
+        this.toJSON = toJSON;
     }
 
-    public SAPServer(Properties properties) {
+    public SAPServer(boolean toJSON, Properties properties) {
         this.callback = null;
         server = null;
         this.properties = properties;
+        this.toJSON = toJSON;
     }
 
     @Override
@@ -97,7 +103,7 @@ public class SAPServer implements Server {
         // Add Function handler
         DefaultServerHandlerFactory.FunctionHandlerFactory factory = new DefaultServerHandlerFactory.FunctionHandlerFactory();
 
-        factory.registerGenericHandler(new GenericFunctionHandler(callback));
+        factory.registerGenericHandler(new GenericFunctionHandler(callback, toJSON));
 
         server.setCallHandlerFactory(factory);
 
@@ -180,6 +186,15 @@ public class SAPServer implements Server {
 
         new MyDestinationDataProvider(properties);
         new MyServerDataProvider(properties);
+    }
+
+    /**
+     * Set if the response should be converted to JSON or not. Default is false.
+     * 
+     * @param toJSON true if the response should be converted to JSON
+     */
+    public void setToJSON(boolean toJSON) {
+        this.toJSON = toJSON;
     }
 
     private boolean checkProperties() {

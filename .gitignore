@@ -9,3 +9,4 @@ sap.properties
 *.xml
 .graphml/**
 loginExample.png
+**.jar

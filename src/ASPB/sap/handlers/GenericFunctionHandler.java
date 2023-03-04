@@ -8,17 +8,38 @@ import com.sap.conn.jco.server.JCoServerFunctionHandler;
 
 import ASPB.utils.Callback;
 
+/**
+ * Generic function handler that can be used to handle any function.
+ * 
+ * @author Philipp Bonin
+ * @version 1.0
+ * 
+ */
 public class GenericFunctionHandler implements JCoServerFunctionHandler {
 
     public boolean toJSON;
 
     private Callback<String> callback;
 
+    /**
+     * Create a new generic function handler that will call the callback function
+     * with the XML representation of the import parameter list.
+     * 
+     * @param callback The callback function to call
+     */
     public GenericFunctionHandler(Callback<String> callback) {
         this.callback = callback;
         this.toJSON = false;
     }
 
+    /**
+     * Create a new generic function handler that will call the callback function
+     * with the XML or JSON representation of the import parameter list.
+     * 
+     * @param callback The callback function to call
+     * @param toJSON   If true the JSON representation will be used, otherwise the
+     *                 XML representation will be used.
+     */
     public GenericFunctionHandler(Callback<String> callback, boolean toJSON) {
         this.callback = callback;
         this.toJSON = toJSON;
@@ -74,6 +95,12 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
          */
     }
 
+    /**
+     * Print the request information to the console.
+     * 
+     * @param serverCtx The server context
+     * @param function  The function
+     */
     private void printRequestInformation(JCoServerContext serverCtx, JCoFunction function) {
         System.out.println("----------------------------------------------------------------");
         System.out.println("call              : " + function.getName());

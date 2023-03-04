@@ -73,7 +73,7 @@ public class MyBufferService extends com.intersystems.enslib.pex.BusinessService
     }
 
     @Override
-    public boolean call(String arg0) throws Exception {
+    public boolean call(String arg0) {
         buffer.add((String) arg0);
         return true;
     }

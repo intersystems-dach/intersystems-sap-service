@@ -3,6 +3,14 @@ package ASPB.utils;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * A generic buffer class that can be used to store items of any type.
+ * The buffer is thread-safe and can be used by multiple threads at the same
+ * time.
+ * 
+ * @author Philipp Bonin
+ * @version 1.0
+ */
 public class Buffer<T> {
 
     // https://www.baeldung.com/java-concurrent-queues
@@ -13,12 +21,26 @@ public class Buffer<T> {
 
     private int maxBufferSize;
 
+    /**
+     * Create a new buffer with a optional maximum size.
+     * 
+     * @param size The maximum size of the buffer. If the size is less than or equal
+     *             to 0, the buffer has no maximum size.
+     */
     public Buffer(int size) {
         if (size > 0)
             maxBufferSize = size;
         else
             maxBufferSize = -1;
 
+        queue = new ConcurrentLinkedQueue<T>();
+    }
+
+    /**
+     * Create a new buffer with no maximum size.
+     */
+    public Buffer() {
+        maxBufferSize = -1;
         queue = new ConcurrentLinkedQueue<T>();
     }
 
