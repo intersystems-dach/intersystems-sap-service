@@ -1,4 +1,4 @@
-<img src = "resources/logo.png" title = "logo" width = "40%"/>
+<img src = "resources/logo.png" title = "logo" width = "50%"/>
 
 # InterSystems SAP Service
 
