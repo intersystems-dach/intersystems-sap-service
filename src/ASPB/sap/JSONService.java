@@ -132,8 +132,9 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
             IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New",
                     s + "/" + buffer.size());
             try {
-                this.SendRequestAsync(SAPService.BusinessPartner, request);
+                this.SendRequestAsync(JSONService.BusinessPartner, request);
             } catch (Exception e) {
+                Logger.error("Error while sending request: " + e.getMessage());
                 result = false;
             }
         }
@@ -147,6 +148,7 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
         // TODO
         // was passiert mit dem buffer wenn der service beendet wird???
         // buffer geht verloren!!!
+        iris.close();
 
         if (server.stop()) {
             Logger.log("SAPService stopped");

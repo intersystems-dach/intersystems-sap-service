@@ -19,6 +19,13 @@ import ASPB.utils.Callback;
 import ASPB.utils.Logger;
 import ASPB.utils.Server;
 
+/**
+ * A Server to receive messages from a SAP system.
+ * 
+ * @author Philipp Bonin
+ * @version 1.0
+ * 
+ */
 public class SAPServer implements Server {
 
     private Callback<String> callback;
@@ -68,13 +75,13 @@ public class SAPServer implements Server {
     public boolean start() {
         // Dont start if no callback is registered
         if (callback == null) {
-            Logger.error("No callback registered");
+            Logger.error("Could not start server: No callback registered");
             return false;
         }
 
         // chek if all required properties are set
         if (!checkProperties()) {
-            Logger.error("Not all properties are set");
+            Logger.error("Could not start server: Not all properties are set");
             return false;
         }
 
@@ -115,18 +122,23 @@ public class SAPServer implements Server {
         server.addServerErrorListener(
                 (JCoServer jcoServer, String connectionId, JCoServerContextInfo arg2, Error error) -> {
                     // TODO Error handling
+                    Logger.error("An error occured on server " + server.getProgramID() + ": " + error.getMessage());
                 });
 
         // Add listener for exceptions.
         server.addServerExceptionListener(
                 (JCoServer jcoServer, String connectionId, JCoServerContextInfo arg2, Exception exception) -> {
                     // TODO Exception handling
+                    Logger.error(
+                            "An exception occured on server " + server.getProgramID() + ": " + exception.getMessage());
+
                 });
 
         // Add server state change listener.
         server.addServerStateChangedListener((JCoServer server, JCoServerState oldState, JCoServerState newState) -> {
             // TODO State change handling
-
+            Logger.log("Server " + server.getProgramID() + " state changed from " + oldState.toString() + " to "
+                    + newState.toString());
             // Defined states are: STARTED, DEAD, ALIVE, STOPPED;
             // see JCoServerState class for details.
             // Details for connections managed by a server instance
@@ -191,10 +203,10 @@ public class SAPServer implements Server {
     /**
      * Set if the response should be converted to JSON or not. Default is false.
      * 
-     * @param toJSON true if the response should be converted to JSON
+     * @param b true if the response should be converted to JSON
      */
-    public void setToJSON(boolean toJSON) {
-        this.toJSON = toJSON;
+    public void setToJSON(boolean b) {
+        this.toJSON = b;
     }
 
     private boolean checkProperties() {

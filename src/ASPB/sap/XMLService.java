@@ -8,6 +8,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+import ASPB.pex.XMLTestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Logger;
@@ -101,7 +102,9 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
             Logger.clear();
 
         // init the server
-        server = new SAPServer(false, this);
+        server = new XMLTestServer();
+        server.registerCallback(this);
+        // server = new SAPServer(false, this);
 
         // Set connection properties
         this.setSAPProperties();
@@ -129,8 +132,9 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
             String s = buffer.poll();
             IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s);
             try {
-                this.SendRequestAsync(SAPService.BusinessPartner, request);
+                this.SendRequestAsync(XMLService.BusinessPartner, request);
             } catch (Exception e) {
+                Logger.error("Error while sending request: " + e.getMessage());
                 result = false;
             }
         }
@@ -144,6 +148,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
         // TODO
         // was passiert mit dem buffer wenn der service beendet wird???
         // buffer geht verloren!!!
+        iris.close();
 
         if (server.stop()) {
             Logger.log("SAPService stopped");

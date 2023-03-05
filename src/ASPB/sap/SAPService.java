@@ -136,6 +136,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
             try {
                 this.SendRequestAsync(SAPService.BusinessPartner, request);
             } catch (Exception e) {
+                Logger.error("Error while sending request: " + e.getMessage());
                 result = false;
             }
         }
@@ -149,7 +150,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
         // TODO
         // was passiert mit dem buffer wenn der service beendet wird???
         // buffer geht verloren!!!
-
+        iris.close();
         if (server.stop()) {
             Logger.log("SAPService stopped");
             LOGINFO("SAPService stopped");
@@ -182,4 +183,5 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
         server.setProperty(DestinationDataProvider.JCO_LANG, SAPService.language);
 
     }
+
 }

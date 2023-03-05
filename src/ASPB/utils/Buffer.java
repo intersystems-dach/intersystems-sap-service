@@ -34,6 +34,8 @@ public class Buffer<T> {
             maxBufferSize = -1;
 
         queue = new ConcurrentLinkedQueue<T>();
+
+        Logger.log("Buffer created with " + (maxBufferSize == -1 ? "unlimited size" : "size " + maxBufferSize));
     }
 
     /**
@@ -42,6 +44,8 @@ public class Buffer<T> {
     public Buffer() {
         maxBufferSize = -1;
         queue = new ConcurrentLinkedQueue<T>();
+
+        Logger.log("Buffer created with unlimited size");
     }
 
     /**
