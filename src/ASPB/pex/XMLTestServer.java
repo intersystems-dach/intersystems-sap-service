@@ -7,6 +7,7 @@ import java.util.Scanner;
 import ASPB.utils.Callback;
 import ASPB.utils.Logger;
 import ASPB.utils.Server;
+import ASPB.utils.XMLParser;
 
 public class XMLTestServer implements Server {
 
@@ -63,19 +64,8 @@ public class XMLTestServer implements Server {
             timeout = Integer.parseInt(value);
     }
 
-    private String generateMessage() {
-        int random = (int) (Math.random() * 2);
-        String s = "";
-        if (random == 0) {
-            s = xml1;
-        } else {
-            s = xml2;
-        }
-        return s;
-    }
-
     private void readXML() throws FileNotFoundException {
-        File file = new File("C:\\Users\\pbonin\\Desktop\\SAPService\\xml\\Z_ISH_CASE_VERSAND_INCL_PAT_sample.xml");
+        File file = new File("C:\\Users\\pbonin\\Desktop\\SAPService\\xml\\Z_ISH_CASE_VERSAND_INCL_PAT.xml");
         Scanner scanner = new Scanner(file);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -84,7 +74,7 @@ public class XMLTestServer implements Server {
         }
         scanner.close();
 
-        file = new File("C:\\Users\\pbonin\\Desktop\\SAPService\\xml\\Z_ISH_PATIENT_VERSAND_sample.xml");
+        file = new File("C:\\Users\\pbonin\\Desktop\\SAPService\\xml\\Z_ISH_PATIENT_VERSAND.xml");
         scanner = new Scanner(file);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -100,12 +90,23 @@ public class XMLTestServer implements Server {
 
         @Override
         public void run() {
+            boolean usexml1 = false;
             while (running) {
                 try {
-                    String message = generateMessage();
+                    usexml1 = !usexml1;
+                    String xml = "";
+                    String function = "";
+                    if (usexml1) {
+                        function = "Z_ISH_CASE_VERSAND_INCL_PAT";
+                        xml = xml1;
+                    } else {
+                        function = "Z_ISH_PATIENT_VERSAND";
+                        xml = xml2;
+                    }
+                    String message = XMLParser.parse(xml, function);
                     callback.call(message);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Logger.error("Error in XMLTestServer: " + e.getMessage());
                 }
                 try {
                     Thread.sleep(timeout);

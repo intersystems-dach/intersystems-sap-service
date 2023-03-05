@@ -85,7 +85,7 @@ public abstract class Logger {
         }
 
         File f = new File(filePath);
-        if (f.exists() && !f.isDirectory()) {
+        if (f.exists() && !f.isDirectory() && f.canWrite()) {
             file = f;
             return;
         }
