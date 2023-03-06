@@ -7,7 +7,9 @@ ideas.md
 .vscode/**
 sap.properties
 *.xml
+*.xsd
 .graphml/**
-loginExample.png
+loginExampleServer.png
+loginExampleClient.png
 **.jar
 src/ASPB/tests/**
