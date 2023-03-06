@@ -6,8 +6,9 @@ import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.server.JCoServerContext;
 import com.sap.conn.jco.server.JCoServerFunctionHandler;
 
-import ASPB.utils.Callback;
-import ASPB.utils.XMLParser;
+import ASPB.utils.Logger;
+import ASPB.utils.XMLConverter;
+import ASPB.utils.interfaces.Callback;
 
 /**
  * Generic function handler that can be used to handle any function.
@@ -18,9 +19,11 @@ import ASPB.utils.XMLParser;
  */
 public class GenericFunctionHandler implements JCoServerFunctionHandler {
 
-    public boolean toJSON;
+    // If true the JSON representation will be used, otherwise the XML
+    private final boolean toJSON;
 
-    private Callback<String> callback;
+    // The callback function to call
+    private final Callback<String> callback;
 
     /**
      * Create a new generic function handler that will call the callback function
@@ -53,6 +56,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
         printRequestInformation(serverCtx, function);
 
         if (toJSON) {
+            // return json
             try {
                 callback.call(function.getImportParameterList().toJSON());
             } catch (Exception e) {
@@ -61,7 +65,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
             }
         } else {
             try {
-                callback.call(XMLParser.parse(function.getImportParameterList().toXML(), function.getName()));
+                callback.call(XMLConverter.convert(function.getImportParameterList().toXML(), function.getName()));
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -110,25 +114,25 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
      * @param function  The function
      */
     private void printRequestInformation(JCoServerContext serverCtx, JCoFunction function) {
-        System.out.println("----------------------------------------------------------------");
-        System.out.println("call              : " + function.getName());
-        System.out.println("ConnectionId      : " + serverCtx.getConnectionID());
-        System.out.println("SessionId         : " + serverCtx.getSessionID());
-        System.out.println("TID               : " + serverCtx.getTID());
-        System.out.println("repository name   : " + serverCtx.getRepository().getName());
-        System.out.println("is in transaction : " + serverCtx.isInTransaction());
-        System.out.println("is stateful       : " + serverCtx.isStatefulSession());
-        System.out.println("----------------------------------------------------------------");
-        System.out.println("gwhost: " + serverCtx.getServer().getGatewayHost());
-        System.out.println("gwserv: " + serverCtx.getServer().getGatewayService());
-        System.out.println("progid: " + serverCtx.getServer().getProgramID());
-        System.out.println("----------------------------------------------------------------");
-        System.out.println("attributes  : ");
-        System.out.println(serverCtx.getConnectionAttributes().toString());
-        System.out.println("----------------------------------------------------------------");
-        System.out.println("Import parameter: " + function.getImportParameterList().toString());
-        System.out.println("JSON Import parameter: " + function.getImportParameterList().toJSON());
-        System.out.println("----------------------------------------------------------------");
+        Logger.log("----------------------------------------------------------------");
+        Logger.log("call              : " + function.getName());
+        Logger.log("ConnectionId      : " + serverCtx.getConnectionID());
+        Logger.log("SessionId         : " + serverCtx.getSessionID());
+        Logger.log("TID               : " + serverCtx.getTID());
+        Logger.log("repository name   : " + serverCtx.getRepository().getName());
+        Logger.log("is in transaction : " + serverCtx.isInTransaction());
+        Logger.log("is stateful       : " + serverCtx.isStatefulSession());
+        Logger.log("----------------------------------------------------------------");
+        Logger.log("gwhost: " + serverCtx.getServer().getGatewayHost());
+        Logger.log("gwserv: " + serverCtx.getServer().getGatewayService());
+        Logger.log("progid: " + serverCtx.getServer().getProgramID());
+        Logger.log("----------------------------------------------------------------");
+        Logger.log("attributes  : ");
+        Logger.log(serverCtx.getConnectionAttributes().toString());
+        Logger.log("----------------------------------------------------------------");
+        Logger.log("Import parameter: " + function.getImportParameterList().toString());
+        Logger.log("JSON Import parameter: " + function.getImportParameterList().toJSON());
+        Logger.log("----------------------------------------------------------------");
     }
 
 }

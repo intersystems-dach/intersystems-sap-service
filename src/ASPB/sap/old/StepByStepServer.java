@@ -23,6 +23,9 @@ import com.sap.conn.jco.server.JCoServerState;
 import com.sap.conn.jco.server.JCoServerStateChangedListener;
 import com.sap.conn.jco.server.JCoServerTIDHandler;
 
+import ASPB.utils.annotations.NotForRealUse;
+
+@NotForRealUse
 public class StepByStepServer {
     static String SERVER_NAME1 = "SERVER";
     static String DESTINATION_NAME1 = "ABAP_AS_WITHOUT_POOL";

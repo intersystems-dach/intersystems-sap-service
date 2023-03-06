@@ -1,16 +1,18 @@
 package ASPB.pex;
 
 import ASPB.tests.TestServer;
-import ASPB.utils.Callback;
-import ASPB.utils.Server;
+import ASPB.utils.annotations.NotForRealUse;
+import ASPB.utils.interfaces.Callback;
+import ASPB.utils.interfaces.MyServer;
 
+@NotForRealUse
 public class MyService extends com.intersystems.enslib.pex.BusinessService implements Callback<String> {
 
     public String BusinessPartner;
 
     public String test;
 
-    private Server server;
+    private MyServer server;
 
     @Override
     public void OnInit() throws Exception {

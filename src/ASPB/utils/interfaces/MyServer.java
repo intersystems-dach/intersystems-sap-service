@@ -1,4 +1,4 @@
-package ASPB.utils;
+package ASPB.utils.interfaces;
 
 /**
  * An Interface for a server
@@ -7,7 +7,7 @@ package ASPB.utils;
  * @version 1.0
  * 
  */
-public interface Server {
+public interface MyServer {
 
     /**
      * Register a callback to the starter service
@@ -44,5 +44,12 @@ public interface Server {
      * @param value the value of the property
      */
     void setProperty(String key, String value);
+
+    /**
+     * Checks if all properties are set before starting the server
+     * 
+     * @return true if all properties are set, false otherwise
+     */
+    boolean checkIfAllPropertiesAreSet();
 
 }

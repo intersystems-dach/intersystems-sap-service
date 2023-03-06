@@ -1,4 +1,4 @@
-package ASPB.utils;
+package ASPB.utils.interfaces;
 
 /**
  * A callback interface to call a method with a single argument

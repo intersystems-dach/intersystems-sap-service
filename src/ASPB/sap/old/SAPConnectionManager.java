@@ -18,7 +18,8 @@ import ASPB.sap.dataprovider.MyServerDataProvider;
 import ASPB.sap.handlers.FunctionHandler;
 import ASPB.sap.handlers.GenericFunctionHandler;
 import ASPB.sap.handlers.TIDHandler;
-import ASPB.utils.Callback;
+import ASPB.utils.annotations.NotForRealUse;
+import ASPB.utils.interfaces.Callback;
 
 /**
  * Manager for the connection to SAP
@@ -27,6 +28,7 @@ import ASPB.utils.Callback;
  * @version 1.0
  * 
  */
+@NotForRealUse
 public abstract class SAPConnectionManager {
 
     private static JCoServer server = null;
@@ -165,7 +167,7 @@ public abstract class SAPConnectionManager {
      * @param functionName The name of the function to handle
      */
     public static void addFunctionHandler(String functionName) {
-        functionHandlers.add(new FunctionHandler(functionName));
+        functionHandlers.add(new FunctionHandler(functionName, null));
     }
 
     /**

@@ -6,16 +6,18 @@ import java.util.List;
 import com.intersystems.enslib.pex.Message;
 
 import ASPB.tests.TestServer;
-import ASPB.utils.Callback;
-import ASPB.utils.Server;
+import ASPB.utils.annotations.NotForRealUse;
+import ASPB.utils.interfaces.Callback;
+import ASPB.utils.interfaces.MyServer;
 
+@NotForRealUse
 public class MyInboundAdapter extends com.intersystems.enslib.pex.InboundAdapter implements Callback<String> {
 
     private List<String> buffer = new ArrayList<String>();
 
     public String test;
 
-    private Server server;
+    private MyServer server;
 
     @Override
     public void OnInit() throws Exception {

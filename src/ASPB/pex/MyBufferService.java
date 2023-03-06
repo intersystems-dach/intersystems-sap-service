@@ -6,14 +6,16 @@ import com.intersystems.jdbc.IRISObject;
 
 import ASPB.tests.TestServer;
 import ASPB.utils.Buffer;
-import ASPB.utils.Callback;
-import ASPB.utils.Server;
+import ASPB.utils.annotations.NotForRealUse;
+import ASPB.utils.interfaces.Callback;
+import ASPB.utils.interfaces.MyServer;
 
+@NotForRealUse
 public class MyBufferService extends com.intersystems.enslib.pex.BusinessService implements Callback<String> {
 
     private Buffer<String> buffer = new Buffer<String>(-1);
 
-    private Server server;
+    private MyServer server;
 
     private IRIS iris;
 

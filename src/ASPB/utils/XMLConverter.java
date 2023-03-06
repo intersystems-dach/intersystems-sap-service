@@ -25,7 +25,7 @@ import org.xml.sax.SAXException;
  * @version 1.0
  * 
  */
-public abstract class XMLParser {
+public abstract class XMLConverter {
 
     // XML namespace and header
     private static final String XMLNAMESPACE = "urn:isc:rfc";
@@ -42,7 +42,7 @@ public abstract class XMLParser {
      * @throws IOException
      * @throws TransformerException
      */
-    public static String parse(String xml, String functionName)
+    public static String convert(String xml, String functionName)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
         // get document
         Document doc = convertStringToXMLDocument(xml);
