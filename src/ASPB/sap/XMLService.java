@@ -8,7 +8,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
-import ASPB.pex.XMLTestServer;
+import ASPB.tests.XMLTestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Logger;
@@ -41,14 +41,20 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     public static int maxBufferSize = 100;
 
     // Server Settings
-    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the programm ID. The programm ID is used to identify the service in the SAP system.")
-    public static String programmID;
-
     @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the gateway host address. The gateway host address is used to connect to the SAP system.")
-    public static String gatewayHostAddress;
+    public static String gatewayHost;
 
     @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number")
     public static String gatewayService;
+
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the programm ID. The programm ID is used to identify the service in the SAP system.")
+    public static String programmID;
+
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the connection count. The connection count is used to connect to the SAP system.")
+    public static int connectionCount;
+
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST")
+    public static String repository;
 
     // Client Settings
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the host address. The host address is used to connect to the SAP system.")
@@ -169,17 +175,19 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
             return;
 
         // Server settings
-        server.setProperty(ServerDataProvider.JCO_PROGID, SAPService.programmID);
-        server.setProperty(ServerDataProvider.JCO_GWHOST, SAPService.gatewayHostAddress);
-        server.setProperty(ServerDataProvider.JCO_GWSERV, SAPService.gatewayService);
+        server.setProperty(ServerDataProvider.JCO_PROGID, XMLService.programmID);
+        server.setProperty(ServerDataProvider.JCO_GWHOST, XMLService.gatewayHost);
+        server.setProperty(ServerDataProvider.JCO_GWSERV, XMLService.gatewayService);
+        server.setProperty(ServerDataProvider.JCO_CONNECTION_COUNT, String.valueOf(XMLService.connectionCount));
+        server.setProperty(ServerDataProvider.JCO_REP_DEST, XMLService.repository);
 
         // Client settings
-        server.setProperty(DestinationDataProvider.JCO_ASHOST, SAPService.hostAddress);
-        server.setProperty(DestinationDataProvider.JCO_CLIENT, SAPService.clientID);
-        server.setProperty(DestinationDataProvider.JCO_SYSNR, SAPService.systemNumber);
-        server.setProperty(DestinationDataProvider.JCO_USER, SAPService.username);
-        server.setProperty(DestinationDataProvider.JCO_PASSWD, SAPService.password);
-        server.setProperty(DestinationDataProvider.JCO_LANG, SAPService.language);
+        server.setProperty(DestinationDataProvider.JCO_ASHOST, XMLService.hostAddress);
+        server.setProperty(DestinationDataProvider.JCO_CLIENT, XMLService.clientID);
+        server.setProperty(DestinationDataProvider.JCO_SYSNR, XMLService.systemNumber);
+        server.setProperty(DestinationDataProvider.JCO_USER, XMLService.username);
+        server.setProperty(DestinationDataProvider.JCO_PASSWD, XMLService.password);
+        server.setProperty(DestinationDataProvider.JCO_LANG, XMLService.language);
 
     }
 }

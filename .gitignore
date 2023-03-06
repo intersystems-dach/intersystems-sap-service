@@ -10,3 +10,4 @@ sap.properties
 .graphml/**
 loginExample.png
 **.jar
+src/ASPB/tests/**

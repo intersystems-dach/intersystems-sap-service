@@ -4,6 +4,7 @@ import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 import com.intersystems.jdbc.IRISObject;
 
+import ASPB.tests.TestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Server;

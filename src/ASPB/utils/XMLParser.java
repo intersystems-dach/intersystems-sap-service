@@ -98,7 +98,6 @@ public abstract class XMLParser {
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
         String output = writer.getBuffer().toString();
-        // String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
         return output;
     }
 

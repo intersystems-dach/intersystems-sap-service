@@ -8,7 +8,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
-import ASPB.pex.TestServer;
+import ASPB.tests.TestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Callback;
 import ASPB.utils.Logger;
@@ -34,49 +34,55 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
     public static String BusinessPartner;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled the service will return a JSON object instead of a XML object")
-    public static boolean toJSON = false;
+    public static boolean ToJSON = false;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "Set the burst size. If the buffer size is greater than the burst size, the burst size will be used. If the burst size is set to 0, the buffer size will be used.")
-    public static int burstSize = 10;
+    public static int BurstSize = 10;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.")
-    public static int maxBufferSize = 100;
+    public static int MaxBufferSize = 100;
 
-    // Server Settings
-    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the programm ID. The programm ID is used to identify the service in the SAP system.")
-    public static String programmID;
+    // Server Connection
+    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "Set the gateway host address. The gateway host address is used to connect to the SAP system.")
+    public static String GatewayHost;
 
-    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the gateway host address. The gateway host address is used to connect to the SAP system.")
-    public static String gatewayHostAddress;
+    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number.")
+    public static String GatewayService;
 
-    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number")
-    public static String gatewayService;
+    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "Set the programm ID. The programm ID is used to identify the service in the SAP system.")
+    public static String ProgrammID;
 
-    // Client Settings
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the host address. The host address is used to connect to the SAP system.")
-    public static String hostAddress;
+    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "Set the connection count. The connection count is used to connect to the SAP system.")
+    public static int ConnectionCount;
 
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the client ID. The client ID is used to connect to the SAP system.")
-    public static String clientID;
+    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST")
+    public static String Repository;
 
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the system number. The system number is used to connect to the SAP system.")
-    public static String systemNumber;
+    // Client Connection
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the host address. The host address is used to connect to the SAP system.")
+    public static String HostAddress;
 
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the username. The username is used to connect to the SAP system.")
-    public static String username;
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the client ID. The client ID is used to connect to the SAP system.")
+    public static String ClientID;
 
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the password. The password is used to connect to the SAP system.")
-    public static String password;
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the system number. The system number is used to connect to the SAP system.")
+    public static String SystemNumber;
 
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "Set the language. The language is used to connect to the SAP system.")
-    public static String language;
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the username. The username is used to connect to the SAP system.")
+    public static String Username;
+
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the password. The password is used to connect to the SAP system.")
+    public static String Password;
+
+    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "Set the language. The language is used to connect to the SAP system.")
+    public static String Language;
 
     // Logging
     @FieldMetadata(Category = "Logging", Description = "Set the log file path. If the log file path is set to an empty string, there will be no log file created. The log file path must refer to an already existing file.")
-    public static String logFilePath = "";
+    public static String LogFilePath = "";
 
     @FieldMetadata(Category = "Logging", Description = "If enabled the log file will be cleared on restart.")
-    public static boolean clearLogOnRestart = false;
+    public static boolean ClearLogOnRestart = false;
 
     /**
      * ******************
@@ -85,7 +91,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
      */
 
     // The buffer
-    private static Buffer<String> buffer = new Buffer<String>(maxBufferSize);
+    private static Buffer<String> buffer = new Buffer<String>(MaxBufferSize);
 
     // The iris connection
     private IRIS iris;
@@ -98,9 +104,9 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
         // get iris connection
         iris = GatewayContext.getIRIS();
         // set the log file path
-        Logger.setFilePath(logFilePath);
+        Logger.setFilePath(LogFilePath);
         // clear the log file
-        if (clearLogOnRestart)
+        if (ClearLogOnRestart)
             Logger.clear();
 
         // start the server
@@ -123,8 +129,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
     public Object OnProcessInput(Object msg) throws Exception {
         // set the burst size
         int burst = buffer.size();
-        if (burst > burstSize && burstSize > 0)
-            burst = burstSize;
+        if (burst > BurstSize && BurstSize > 0)
+            burst = BurstSize;
 
         boolean result = true;
 
@@ -170,17 +176,19 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService impl
             return;
 
         // Server settings
-        server.setProperty(ServerDataProvider.JCO_PROGID, SAPService.programmID);
-        server.setProperty(ServerDataProvider.JCO_GWHOST, SAPService.gatewayHostAddress);
-        server.setProperty(ServerDataProvider.JCO_GWSERV, SAPService.gatewayService);
+        server.setProperty(ServerDataProvider.JCO_PROGID, SAPService.ProgrammID);
+        server.setProperty(ServerDataProvider.JCO_GWHOST, SAPService.GatewayHost);
+        server.setProperty(ServerDataProvider.JCO_GWSERV, SAPService.GatewayService);
+        server.setProperty(ServerDataProvider.JCO_CONNECTION_COUNT, String.valueOf(SAPService.ConnectionCount));
+        server.setProperty(ServerDataProvider.JCO_REP_DEST, SAPService.Repository);
 
         // Client settings
-        server.setProperty(DestinationDataProvider.JCO_ASHOST, SAPService.hostAddress);
-        server.setProperty(DestinationDataProvider.JCO_CLIENT, SAPService.clientID);
-        server.setProperty(DestinationDataProvider.JCO_SYSNR, SAPService.systemNumber);
-        server.setProperty(DestinationDataProvider.JCO_USER, SAPService.username);
-        server.setProperty(DestinationDataProvider.JCO_PASSWD, SAPService.password);
-        server.setProperty(DestinationDataProvider.JCO_LANG, SAPService.language);
+        server.setProperty(DestinationDataProvider.JCO_ASHOST, SAPService.HostAddress);
+        server.setProperty(DestinationDataProvider.JCO_CLIENT, SAPService.ClientID);
+        server.setProperty(DestinationDataProvider.JCO_SYSNR, SAPService.SystemNumber);
+        server.setProperty(DestinationDataProvider.JCO_USER, SAPService.Username);
+        server.setProperty(DestinationDataProvider.JCO_PASSWD, SAPService.Password);
+        server.setProperty(DestinationDataProvider.JCO_LANG, SAPService.Language);
 
     }
 

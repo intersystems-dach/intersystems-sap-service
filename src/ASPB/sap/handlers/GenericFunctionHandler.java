@@ -7,6 +7,7 @@ import com.sap.conn.jco.server.JCoServerContext;
 import com.sap.conn.jco.server.JCoServerFunctionHandler;
 
 import ASPB.utils.Callback;
+import ASPB.utils.XMLParser;
 
 /**
  * Generic function handler that can be used to handle any function.
@@ -60,7 +61,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
             }
         } else {
             try {
-                callback.call(function.getImportParameterList().toXML());
+                callback.call(XMLParser.parse(function.getImportParameterList().toXML(), function.getName()));
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -92,6 +93,13 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
          * }
          * // Provide the payload as exporting parameter.
          * function.getExportParameterList().setValue("RESPONSE_PAYLOAD", payload);
+         */
+
+        // TODO
+        // In sample 3 (tRFC Server) we also set the status to executed:
+        /*
+         * if (myTIDHandler != null)
+         * myTIDHandler.execute(serverCtx);
          */
     }
 

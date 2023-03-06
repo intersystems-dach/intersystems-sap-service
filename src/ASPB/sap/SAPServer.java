@@ -64,6 +64,7 @@ public class SAPServer implements Server {
         this.toJSON = toJSON;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void registerCallback(Callback<?> callback) {
         // TODO check if the callback is of the correct type
@@ -190,11 +191,17 @@ public class SAPServer implements Server {
         // Set runtime arguments since some of the JCo-properties need to be passed the
         // the VM
         // and simply passing them to JCo won't have any effects.
-        System.setProperty("jco.trace_path", properties.getProperty("jco.trace_path"));
-
-        System.setProperty("jco.trace_level", properties.getProperty("jco.trace_level").toString());
-
-        System.setProperty("jrfc.trace", properties.getProperty("jrfc.trace").toString());
+        // TODO check if this is still needed
+        /*
+         * System.setProperty("jco.trace_path",
+         * properties.getProperty("jco.trace_path"));
+         * 
+         * System.setProperty("jco.trace_level",
+         * properties.getProperty("jco.trace_level").toString());
+         * 
+         * System.setProperty("jrfc.trace",
+         * properties.getProperty("jrfc.trace").toString());
+         */
 
         new MyDestinationDataProvider(properties);
         new MyServerDataProvider(properties);

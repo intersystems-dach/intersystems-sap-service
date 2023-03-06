@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.intersystems.enslib.pex.Message;
 
+import ASPB.tests.TestServer;
 import ASPB.utils.Callback;
 import ASPB.utils.Server;
 
