@@ -7,7 +7,11 @@ An InterSystems SAP Business Service to receive from a SAP System.
 ---
 
 -   [Overview](#overview)
+-   [Components](#components)
+    -   [ASPB.sap.XMLService](#aspbsapxmlservice)
+    -   [ASPB.sap.JSONService](#aspbsapjsonservice)
 -   [Dependencies](#dependencies)
+-   [Requirements](#requirements)
 -   [Installation](#installation)
 -   [Settings](#settings)
     -   [SAP Service Settings](#sap-service-settings)
@@ -25,6 +29,18 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ---
 
+## Components
+
+### [ASPB.sap.XMLService](src/ASPB/sap/XMLService.java)
+
+This service receives messages from a SAP System and sends a [_EnsLib.EDI.XML.Document_](https://docs.intersystems.com/irislatest/csp/documatic/%25CSP.Documatic.cls?LIBRARY=ENSLIB&CLASSNAME=EnsLib.EDI.XML.Document) to an InterSystems Production.
+
+### [ASPB.sap.JSONService](src/ASPB/sap/JSONService.java)
+
+This service receives messages from a SAP System and sends them to an InterSystems Production in [JSON fomat](https://www.json.org/json-en.html).
+
+---
+
 ## Dependencies
 
 -   [sapco.jar](https://support.sap.com/en/product/connectors/jco.html) _3.0.11 or higher_
@@ -32,6 +48,13 @@ An InterSystems SAP Business Service to receive from a SAP System.
 -   intersystems-utils.jar _3.0.0 or higher_
 
 > **Note:** The _intersystems-jdbc.jar_ and _intersystems-utils.jar_ are included in the InterSystems IRIS installation. You can find them in the `~/dev/java` folder.
+
+---
+
+## Requirements
+
+-   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2020.1 or higher_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2020.1 or higher_
+-   An interoperability enabled namespace
 
 ---
 
