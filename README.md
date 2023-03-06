@@ -6,11 +6,22 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ---
 
+-   [Overview](#overview)
 -   [Dependencies](#dependencies)
 -   [Installation](#installation)
 -   [Settings](#settings)
+    -   [SAP Service Settings](#sap-service-settings)
+    -   [SAP Server Connection](#sap-server-connection)
+    -   [SAP Client Connection](#sap-client-connection)
+    -   [Logging](#logging)
 -   [Bugs](#bugs)
 -   [Release Notes](#release-notes)
+
+---
+
+## Overview
+
+![SAPService_Details](resources/SAPService_Details.jpg)
 
 ---
 
@@ -57,6 +68,35 @@ An InterSystems SAP Business Service to receive from a SAP System.
 ---
 
 ## Settings
+
+### SAP Service Settings
+
+-   `BusinessPartner` _string, required_ - The Business Partner to send the data to in the InterSystems Production
+-   `ToJSON` _boolean_ - If set to true, the data will be converted to JSON before sending it to the InterSystems Production otherwise the data will be sent as XML format. _(default: false)_
+-   `BurstSize` _integer_ - The number of messages to send in one burst if there are enough elements in the buffer. A Burst will be sent after ever `Basic Settings: Call Interval` seconds. You can set the Burst size to 0 and all elements from the buffer will be sent in one Burst. _(default: 10)_
+-   `MaxBufferSize` _integer_ - The maximum number of messages to store in the buffer. You can set the Buffer size to 0 for an unlimited Buffer. _(default: 100)_
+
+### SAP Server Connection
+
+-   `GatewayHost` _string, required_ - The host address of the SAP Gateway
+-   `GatewayService` _string, required_ - The service name of the SAP Gateway. Usually `sapgwNN` whereas NN is the instance number.
+-   `ProgrammID` _string, required_ - The Program ID of this service to identify the connection.
+-   `ConnectionCount` _integer, required_ - The number of connections to the SAP Gateway.
+-   `Repository` _string, required_ - The name of the SAP Repository.
+
+### SAP Client Connection
+
+-   `HostAddress` _string, required_ - The host address of the SAP System.
+-   `ClientID` _string, required_ - The Client ID of your mandant.
+-   `SystemNumber` _string, required_ - The System Number of the SAP System.
+-   `Username` _string, required_ - The username to connect to the SAP System.
+-   `Password` _string, required_ - The password of the user.
+-   `Language` _string, required_ - The language of the SAP System.
+
+### Logging
+
+-   `LogFilePath` _string_ - An absolute Path to a file where the service will log the messages. The file must be already created and writeable, the service will **not** create the file. If no or an invalid path is set, the service will not log the messages.
+-   `ClearLogOnRestart` _boolean_ - If set to true, the log file will be cleared when the service is restarted. _(default: false)_
 
 ---
 
