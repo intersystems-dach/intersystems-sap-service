@@ -3,6 +3,7 @@ package ASPB.sap;
 import java.util.Properties;
 
 import com.sap.conn.jco.JCoException;
+import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 import com.sap.conn.jco.server.DefaultServerHandlerFactory;
 import com.sap.conn.jco.server.JCoServer;
@@ -216,8 +217,35 @@ public class SAPServer implements Server {
         this.toJSON = b;
     }
 
+    /**
+     * Checks if all properties are set
+     * 
+     * @return true if all properties are set
+     */
     private boolean checkProperties() {
-        // TODO check if all properties are set
-        return true;
+
+        String[] keyNames = {
+                ServerDataProvider.JCO_PROGID,
+                ServerDataProvider.JCO_GWHOST,
+                ServerDataProvider.JCO_GWSERV,
+                ServerDataProvider.JCO_CONNECTION_COUNT,
+                DestinationDataProvider.JCO_ASHOST,
+                DestinationDataProvider.JCO_CLIENT,
+                DestinationDataProvider.JCO_SYSNR,
+                DestinationDataProvider.JCO_USER,
+                DestinationDataProvider.JCO_PASSWD,
+                DestinationDataProvider.JCO_LANG
+        };
+
+        boolean allSet = true;
+        for (String key : keyNames) {
+            if (properties.getProperty(key) == null
+                    || properties.getProperty(key).isEmpty()) {
+                Logger.error("Could not start server: " + key + "not set");
+                allSet = false;
+            }
+        }
+
+        return allSet;
     }
 }
