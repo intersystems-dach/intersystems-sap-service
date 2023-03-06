@@ -1,6 +1,6 @@
 <img src = "resources/logo.png" title = "logo" width = "50%"/>
 
-# InterSystems SAP Service
+# InterSystems SAP Service _BETA_
 
 An InterSystems SAP Business Service to receive from a SAP System.
 
@@ -45,7 +45,7 @@ This service receives messages from a SAP System and sends them to an InterSyste
 
 -   [sapco.jar](https://support.sap.com/en/product/connectors/jco.html) _3.0.11 or higher_
 -   intersystems-jdbc.jar _3.3.1 or higher_
--   intersystems-utils.jar _3.0.0 or higher_
+-   intersystems-utils.jar _3.3.0 or higher_
 
 > **Note:** The _intersystems-jdbc.jar_ and _intersystems-utils.jar_ are included in the InterSystems IRIS installation. You can find them in the `~/dev/java` folder.
 
@@ -130,7 +130,7 @@ This service receives messages from a SAP System and sends them to an InterSyste
 
 ## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
 
-### [v0.0.1](https://github.com/phil1436/intersystems-sap-service/tree/0.0.1)
+### [v0.0.1-BETA](https://github.com/phil1436/intersystems-sap-service/tree/0.0.1)
 
 -   _Initial release_
 
