@@ -3,7 +3,6 @@ package ASPB.sap;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import com.intersystems.enslib.pex.FieldMetadata;
 import com.sap.conn.jco.JCoException;
 import com.sap.conn.jco.ext.ServerDataProvider;
 import com.sap.conn.jco.server.DefaultServerHandlerFactory;
@@ -23,6 +22,7 @@ import ASPB.sap.handlers.TIDHandler;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
 import ASPB.utils.annotations.JCOPropertyAnnotation;
+import ASPB.utils.annotations.MyFieldMetadata;
 import ASPB.utils.interfaces.Callback;
 import ASPB.utils.interfaces.MyServer;
 
@@ -268,8 +268,8 @@ public class SAPServer implements MyServer,
         boolean allSet = true;
 
         for (Field f : ServiceManager.getInstance().getAllSettings()) {
-            if (f.isAnnotationPresent(FieldMetadata.class) && f.isAnnotationPresent(JCOPropertyAnnotation.class)) {
-                if (f.getAnnotation(FieldMetadata.class).IsRequired()) {
+            if (f.isAnnotationPresent(MyFieldMetadata.class) && f.isAnnotationPresent(JCOPropertyAnnotation.class)) {
+                if (f.getAnnotation(MyFieldMetadata.class).IsRequired()) {
                     String name = f.getAnnotation(JCOPropertyAnnotation.class).jcoName();
                     if (properties.getProperty(name) == null || properties.getProperty(name).isEmpty()) {
                         String msg = "Property not set: " + f.getName();

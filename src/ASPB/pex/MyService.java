@@ -82,9 +82,4 @@ public class MyService extends com.intersystems.enslib.pex.BusinessService imple
         }
     }
 
-    @Override
-    public String getAdapterType() {
-        return "";
-    }
-
 }

@@ -81,9 +81,4 @@ public class MyBufferService extends com.intersystems.enslib.pex.BusinessService
         return true;
     }
 
-    @Override
-    public String getAdapterType() {
-        return "";
-    }
-
 }
