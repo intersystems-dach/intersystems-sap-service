@@ -48,7 +48,13 @@ public class MyDestinationDataProvider implements DestinationDataProvider {
         // Check if a registration has already been performed.
         if (registered == false) {
             // Register the destination data provider.
-            Environment.registerDestinationDataProvider(provider);
+            try {
+                Environment.registerDestinationDataProvider(provider);
+            } catch (Exception e) {
+                // This exception is thrown in case the destination data provider
+                // is already registered.
+                // In this case we can ignore the exception.
+            }
             registered = true;
         }
     }

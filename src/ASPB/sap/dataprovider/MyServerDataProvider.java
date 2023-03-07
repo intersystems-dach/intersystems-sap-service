@@ -48,7 +48,13 @@ public class MyServerDataProvider implements ServerDataProvider {
         // Check if a registration has already been performed.
         if (registered == false) {
             // Register the destination data provider.
-            Environment.registerServerDataProvider(provider);
+            try {
+                Environment.unregisterServerDataProvider(provider);
+            } catch (Exception e) {
+                // This exception is thrown in case the destination data provider
+                // is already registered.
+                // In this case we can ignore the exception.
+            }
             registered = true;
         }
     }
