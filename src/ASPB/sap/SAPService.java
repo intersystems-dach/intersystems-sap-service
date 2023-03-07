@@ -262,4 +262,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         LOGERROR(message);
     }
 
+    public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
+        _dispatchOnInit(hostObject);
+    }
+
 }

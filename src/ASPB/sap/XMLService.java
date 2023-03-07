@@ -268,4 +268,8 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     public void logError(String message) {
         LOGERROR(message);
     }
+
+    public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
+        _dispatchOnInit(hostObject);
+    }
 }
