@@ -49,11 +49,11 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     // Server Connection
     @JCOPropertyAnnotation(jcoName = ServerDataProvider.JCO_GWHOST)
     @MyFieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.")
-    public static String GatewayHost = "";
+    public static String SAPGatewayHost = "";
 
     @JCOPropertyAnnotation(jcoName = ServerDataProvider.JCO_GWSERV)
     @MyFieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number.")
-    public static String GatewayService = "";
+    public static String SAPGatewayService = "";
 
     @JCOPropertyAnnotation(jcoName = ServerDataProvider.JCO_PROGID)
     @MyFieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the programm ID. The programm ID is used to identify the service in the SAP system.")
@@ -70,7 +70,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     // Client Connection
     @JCOPropertyAnnotation(jcoName = DestinationDataProvider.JCO_ASHOST)
     @MyFieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.")
-    public static String HostAddress = "";
+    public static String SAPHostAddress = "";
 
     @JCOPropertyAnnotation(jcoName = DestinationDataProvider.JCO_CLIENT)
     @MyFieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the client ID. The client ID is used to connect to the SAP system.")
@@ -90,7 +90,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
     @JCOPropertyAnnotation(jcoName = DestinationDataProvider.JCO_LANG)
     @MyFieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the language. The language is used to connect to the SAP system.")
-    public static String Language = "";
+    public static String SAPLanguage = "";
 
     // Logging
     @MyFieldMetadata(Category = "Logging", Description = "Set the log file path. If the log file path is set to an empty string, there will be no log file created. The log file path must refer to an already existing file.")
