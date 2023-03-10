@@ -13,3 +13,4 @@ loginExampleServer.png
 loginExampleClient.png
 **.jar
 src/ASPB/tests/**
+javadoc/**
