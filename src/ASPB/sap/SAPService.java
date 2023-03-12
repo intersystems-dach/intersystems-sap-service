@@ -10,6 +10,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+import ASPB.sap.dataprovider.DataProviderManager;
 import ASPB.tests.TestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
@@ -142,8 +143,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         this.setJcoProperties();
 
         if (!server.checkIfAllPropertiesAreSet()) {
-            Logger.error("SAPService could not be started");
-            LOGERROR("SAPService could not be started");
+            Logger.error("SAPService could not be initialized");
+            LOGERROR("SAPService could not be initialized");
             throw new RuntimeException();
         }
 
@@ -197,6 +198,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
 
         iris.close();
         ServiceManager.unregisterService();
+        DataProviderManager.unregister();
+
     }
 
     @Override

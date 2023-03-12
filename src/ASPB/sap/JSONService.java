@@ -10,6 +10,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+import ASPB.sap.dataprovider.DataProviderManager;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
@@ -139,8 +140,8 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // cehck if all required properties are set
         if (!server.checkIfAllPropertiesAreSet()) {
-            Logger.error("SAPService could not be started");
-            LOGERROR("SAPService could not be started");
+            Logger.error("SAPService could not be initialized");
+            LOGERROR("SAPService could not be initialized");
             throw new RuntimeException("Set all required properties before starting the service!");
         }
 
@@ -152,7 +153,6 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
             Logger.log("SAPService could not be started");
             LOGERROR("SAPService could not be started");
             throw new RuntimeException("SAPService could not be started");
-
         }
     }
 
@@ -202,6 +202,8 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // unregister at the ServiceManager
         ServiceManager.unregisterService();
+        DataProviderManager.unregister();
+
     }
 
     @Override

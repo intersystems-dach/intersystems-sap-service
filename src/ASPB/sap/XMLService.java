@@ -10,6 +10,7 @@ import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+import ASPB.sap.dataprovider.DataProviderManager;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
@@ -139,8 +140,8 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // cehck if all required properties are set
         if (!server.checkIfAllPropertiesAreSet()) {
-            Logger.error("SAPService could not be started");
-            LOGERROR("SAPService could not be started");
+            Logger.error("SAPService could not be initialized");
+            LOGERROR("SAPService could not be initialized");
             throw new RuntimeException("Set all required properties before starting the service!");
         }
 
@@ -202,6 +203,8 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // unregister at the ServiceManager
         ServiceManager.unregisterService();
+        DataProviderManager.unregister();
+
     }
 
     @Override
