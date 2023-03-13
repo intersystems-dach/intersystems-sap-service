@@ -11,7 +11,6 @@ import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
 import ASPB.sap.dataprovider.DataProviderManager;
-import ASPB.tests.TestServer;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
@@ -136,7 +135,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             Logger.clear();
 
         // start the server
-        server = new TestServer();
+        server = new SAPServer(true);
         server.registerCallback(this);
 
         // Set connection properties

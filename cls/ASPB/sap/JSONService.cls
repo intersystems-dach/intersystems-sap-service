@@ -9,7 +9,7 @@ Parameter %URL = "https://github.com/phil1436/intersystems-sap-service";
 Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,BurstSize:SAP Service Settings,MaxBufferSize:SAP Service Settings,SAPGatewayHost:SAP Server Connection,SAPGatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,SAPHostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection,LogFilePath:Logging,ClearLogOnRestart:Logging";
 
 /// Ein oder mehrere Klassenpfade (getrennt durch das Zeichen ‚|‘), die zusätzlich zu den im Remote Gateway konfigurierten Pfaden benötigt werden
-Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "C:\Users\pbonin\Desktop\SAPService\SAPService.jar" ];
+Property %gatewayExtraClasspaths As %String(MAXLEN = "");
 
 /// Name des externen Sprachen-Servers
 Property %gatewayName As %String [ InitialExpression = "%Java Server", Internal ];
