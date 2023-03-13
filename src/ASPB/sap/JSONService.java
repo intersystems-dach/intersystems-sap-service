@@ -202,6 +202,8 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // unregister at the ServiceManager
         ServiceManager.unregisterService();
+
+        // unregister the data provider so the properties can be overwritten
         DataProviderManager.unregister();
 
     }

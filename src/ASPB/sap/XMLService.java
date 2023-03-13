@@ -203,6 +203,8 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // unregister at the ServiceManager
         ServiceManager.unregisterService();
+
+        // unregister the data provider so the properties can be overwritten
         DataProviderManager.unregister();
 
     }
