@@ -21,6 +21,8 @@ public class Buffer<T> {
 
     private int maxBufferSize;
 
+    private boolean overflow = false;
+
     /**
      * Create a new buffer with a optional maximum size.
      * 
@@ -56,8 +58,10 @@ public class Buffer<T> {
      * @return True if the item was added to the buffer, false otherwise
      */
     public boolean add(T item) {
-        if (maxBufferSize > 0 && queue.size() >= maxBufferSize)
+        if (maxBufferSize > 0 && queue.size() >= maxBufferSize) {
+            overflow = true;
             return false;
+        }
 
         return queue.add(item);
     }
@@ -78,5 +82,9 @@ public class Buffer<T> {
      */
     public int size() {
         return queue.size();
+    }
+
+    public boolean isOverflow() {
+        return overflow;
     }
 }

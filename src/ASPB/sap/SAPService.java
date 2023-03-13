@@ -268,4 +268,9 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         _dispatchOnInit(hostObject);
     }
 
+    @Override
+    public MyServer getServer() {
+        return server;
+    }
+
 }

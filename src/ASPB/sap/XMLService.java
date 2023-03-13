@@ -45,7 +45,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     public static int BurstSize = 10;
 
     @MyFieldMetadata(Category = "SAP Service Settings", Description = "Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.")
-    public static int MaxBufferSize = 100;
+    public static int MaxBufferSize = 1000;
 
     // Server Connection
     @JCOPropertyAnnotation(jcoName = ServerDataProvider.JCO_GWHOST)
@@ -117,6 +117,12 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
     @Override
     public void OnInit() throws Exception {
+
+        // check if the buffer size is greater than 10
+        if (MaxBufferSize <= 10) {
+            exitWithError("MaxBufferSize must be greater than 10!");
+        }
+
         // register at the ServiceManager
         ServiceManager.registerService(this);
 
@@ -140,9 +146,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // cehck if all required properties are set
         if (!server.checkIfAllPropertiesAreSet()) {
-            Logger.error("SAPService could not be initialized");
-            LOGERROR("SAPService could not be initialized");
-            throw new RuntimeException("Set all required properties before starting the service!");
+            exitWithError("Set all required properties before starting the service!");
         }
 
         // start the server
@@ -150,20 +154,21 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
             Logger.log("SAPService started");
             LOGINFO("SAPService started");
         } else {
-            Logger.log("SAPService could not be started");
-            LOGERROR("SAPService could not be started");
-            throw new RuntimeException("SAPService could not be started");
-
+            exitWithError("SAPService could not be started");
         }
 
+    }
+
+    public void exitWithError(String msg) {
+        Logger.error("SAPService could not be initialized");
+        LOGERROR("SAPService could not be initialized");
+        throw new RuntimeException("Set all required properties before starting the service!");
     }
 
     @Override
     public Object OnProcessInput(Object arg0) throws Exception {
         // set the burst size
         int burst = buffer.size();
-        if (burst > BurstSize && BurstSize > 0)
-            burst = BurstSize;
 
         boolean result = true;
 
@@ -179,6 +184,10 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
             }
         }
 
+        // exit when buffer was full
+        if (buffer.isOverflow()) {
+            exitWithError("Buffer is full increase the buffer size!");
+        }
         return result;
     }
 
@@ -196,6 +205,17 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
         } else {
             Logger.log("SAPService could not be stopped");
             LOGERROR("SAPService could not be stopped");
+        }
+
+        // send all remaining requests
+        for (int i = 0; i < buffer.size(); i++) {
+            String s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s);
+            try {
+                this.SendRequestAsync(XMLService.BusinessPartner, request);
+            } catch (Exception e) {
+                Logger.error("Error while sending request: " + e.getMessage());
+            }
         }
 
         // Close iris connection
@@ -262,6 +282,11 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
         }
         return fields.toArray(new Field[fields.size()]);
 
+    }
+
+    @Override
+    public MyServer getServer() {
+        return server;
     }
 
     @Override

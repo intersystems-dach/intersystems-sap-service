@@ -45,7 +45,7 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
     public static int BurstSize = 10;
 
     @MyFieldMetadata(Category = "SAP Service Settings", Description = "Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.")
-    public static int MaxBufferSize = 100;
+    public static int MaxBufferSize = 1000;
 
     // Server Connection
     @JCOPropertyAnnotation(jcoName = ServerDataProvider.JCO_GWHOST)
@@ -117,6 +117,12 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
     @Override
     public void OnInit() throws Exception {
+
+        // check if the buffer size is greater than 10
+        if (MaxBufferSize <= 10) {
+            exitWithError("MaxBufferSize must be greater than 10!");
+        }
+
         // register at the ServiceManager
         ServiceManager.registerService(this);
 
@@ -140,9 +146,7 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // cehck if all required properties are set
         if (!server.checkIfAllPropertiesAreSet()) {
-            Logger.error("SAPService could not be initialized");
-            LOGERROR("SAPService could not be initialized");
-            throw new RuntimeException("Set all required properties before starting the service!");
+            exitWithError("Set all required properties before starting the service!");
         }
 
         // start the server
@@ -150,26 +154,27 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
             Logger.log("SAPService started");
             LOGINFO("SAPService started");
         } else {
-            Logger.log("SAPService could not be started");
-            LOGERROR("SAPService could not be started");
-            throw new RuntimeException("SAPService could not be started");
+            exitWithError("SAPService could not be started");
         }
+    }
+
+    public void exitWithError(String msg) {
+        Logger.error("SAPService could not be initialized");
+        LOGERROR("SAPService could not be initialized");
+        throw new RuntimeException("Set all required properties before starting the service!");
     }
 
     @Override
     public Object OnProcessInput(Object arg0) throws Exception {
         // set the burst size
         int burst = buffer.size();
-        if (burst > BurstSize && BurstSize > 0)
-            burst = BurstSize;
 
         boolean result = true;
 
         // send
         for (int i = 0; i < burst; i++) {
             String s = buffer.poll();
-            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New",
-                    s);
+            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s);
             try {
                 this.SendRequestAsync(JSONService.BusinessPartner, request);
             } catch (Exception e) {
@@ -178,6 +183,10 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
             }
         }
 
+        // exit when buffer was full
+        if (buffer.isOverflow()) {
+            exitWithError("Buffer is full increase the buffer size!");
+        }
         return result;
     }
 
@@ -197,6 +206,17 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
             LOGERROR("SAPService could not be stopped");
         }
 
+        // send all remaining requests
+        for (int i = 0; i < buffer.size(); i++) {
+            String s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s);
+            try {
+                this.SendRequestAsync(XMLService.BusinessPartner, request);
+            } catch (Exception e) {
+                Logger.error("Error while sending request: " + e.getMessage());
+            }
+        }
+
         // Close iris connection
         iris.close();
 
@@ -212,31 +232,6 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
     public boolean call(String arg0) {
         return buffer.add(arg0);
     }
-
-    /*
-     * private void setSAPProperties() {
-     * if (server == null)
-     * return;
-     * 
-     * server.setProperty(ServerDataProvider.JCO_PROGID, JSONService.ProgrammID);
-     * server.setProperty(ServerDataProvider.JCO_GWHOST, JSONService.GatewayHost);
-     * server.setProperty(ServerDataProvider.JCO_GWSERV,
-     * JSONService.GatewayService);
-     * server.setProperty(ServerDataProvider.JCO_CONNECTION_COUNT,
-     * String.valueOf(JSONService.ConnectionCount));
-     * server.setProperty(ServerDataProvider.JCO_REP_DEST, JSONService.Repository);
-     * 
-     * server.setProperty(DestinationDataProvider.JCO_ASHOST,
-     * JSONService.HostAddress);
-     * server.setProperty(DestinationDataProvider.JCO_CLIENT, JSONService.ClientID);
-     * server.setProperty(DestinationDataProvider.JCO_SYSNR,
-     * JSONService.SystemNumber);
-     * server.setProperty(DestinationDataProvider.JCO_USER, JSONService.Username);
-     * server.setProperty(DestinationDataProvider.JCO_PASSWD, JSONService.Password);
-     * server.setProperty(DestinationDataProvider.JCO_LANG, JSONService.Language);
-     * 
-     * }
-     */
 
     /**
      * Add all attributes with the {@link JCOPropertyAnnotation} to the server
@@ -297,7 +292,13 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
         LOGERROR(message);
     }
 
+    @Override
+    public MyServer getServer() {
+        return server;
+    }
+
     public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
         _dispatchOnInit(hostObject);
     }
+
 }

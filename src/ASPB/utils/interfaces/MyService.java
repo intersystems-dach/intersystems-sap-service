@@ -49,4 +49,11 @@ public interface MyService {
      * @param message the message to log
      */
     void logError(String message);
+
+    /**
+     * Get the server instance
+     * 
+     * @return the server instance
+     */
+    MyServer getServer();
 }

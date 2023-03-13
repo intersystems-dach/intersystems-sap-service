@@ -55,22 +55,24 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
 
         printRequestInformation(serverCtx, function);
 
+        String result = "";
+
         if (toJSON) {
             // return json
-            try {
-                callback.call(function.getImportParameterList().toJSON());
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            result = function.getImportParameterList().toJSON();
+
         } else {
+            // return xml
             try {
-                callback.call(XMLConverter.convert(function.getImportParameterList().toXML(), function.getName()));
+                result = XMLConverter.convert(function.getImportParameterList().toXML(), function.getName());
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                // TODO handle exception when parsing the xml
             }
         }
+
+        // call the callback function
+        callback.call(result);
+
         /*
          * Iterator<JCoField> i = function.getImportParameterList().iterator();
          * while (i.hasNext()) {
