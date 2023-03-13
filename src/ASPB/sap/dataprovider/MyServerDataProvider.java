@@ -6,6 +6,8 @@ import com.sap.conn.jco.ext.Environment;
 import com.sap.conn.jco.ext.ServerDataEventListener;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+import ASPB.utils.Logger;
+
 public class MyServerDataProvider implements ServerDataProvider {
 
     /**
@@ -33,11 +35,6 @@ public class MyServerDataProvider implements ServerDataProvider {
     }
 
     /**
-     * Flag that indicates if the method was already called.
-     */
-    private static boolean registered = false;
-
-    /**
      * Registers the given {@code provider} as server data provider at the
      * {@link Environment}.
      * 
@@ -46,10 +43,14 @@ public class MyServerDataProvider implements ServerDataProvider {
      */
     private static void register(MyServerDataProvider provider) {
         // Check if a registration has already been performed.
-        if (registered == false) {
-            // Register the destination data provider.
-            Environment.registerServerDataProvider(provider);
-            registered = true;
+        // Register the destination data provider.
+        try {
+            DataProviderManager.register(provider);
+        } catch (Exception e) {
+            // This exception is thrown in case the destination data provider
+            // is already registered.
+            // In this case we can ignore the exception.
+            Logger.error("Could not register Server Data Provider:" + e.getMessage());
         }
     }
 

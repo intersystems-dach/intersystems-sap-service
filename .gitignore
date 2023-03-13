@@ -13,3 +13,7 @@ loginExampleServer.png
 loginExampleClient.png
 **.jar
 src/ASPB/tests/**
+javadoc/**
+**.jcoDestination
+src/ASPB/pex/**
+src/ASPB/sap/old/**

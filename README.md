@@ -1,6 +1,6 @@
 <img src = "resources/logo.png" title = "logo" width = "50%"/>
 
-# InterSystems SAP Service _BETA_
+# InterSystems SAP Service **_TESTVERSION_**
 
 An InterSystems SAP Business Service to receive from a SAP System.
 
@@ -13,11 +13,16 @@ An InterSystems SAP Business Service to receive from a SAP System.
 -   [Dependencies](#dependencies)
 -   [Requirements](#requirements)
 -   [Installation](#installation)
+    -   [Setup an external language server](#setup-an-external-language-server)
+    -   [Import proxy classes](#import-proxy-classes)
+    -   [Setup a service](#setup-a-service)
+    -   [Configure the service](#configure-the-service)
 -   [Settings](#settings)
     -   [SAP Service Settings](#sap-service-settings)
     -   [SAP Server Connection](#sap-server-connection)
     -   [SAP Client Connection](#sap-client-connection)
     -   [Logging](#logging)
+    -   [Remote Business Service](#remote-business-service)
 -   [Bugs](#bugs)
 -   [Release Notes](#release-notes)
 
@@ -44,8 +49,8 @@ This service receives messages from a SAP System and sends them to an InterSyste
 ## Dependencies
 
 -   [sapco.jar](https://support.sap.com/en/product/connectors/jco.html) _3.0.11 or higher_
--   intersystems-jdbc.jar _3.3.1 or higher_
--   intersystems-utils.jar _3.3.0 or higher_
+-   intersystems-jdbc.jar _3.2.0_
+-   intersystems-utils.jar _3.2.0_
 
 > **Note:** The _intersystems-jdbc.jar_ and _intersystems-utils.jar_ are included in the InterSystems IRIS installation. You can find them in the `~/dev/java` folder.
 
@@ -53,40 +58,55 @@ This service receives messages from a SAP System and sends them to an InterSyste
 
 ## Requirements
 
--   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2020.1 or higher_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2020.1 or higher_
+-   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2021.1_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2021.1_
 -   An interoperability enabled namespace
 
 ---
 
 ## Installation
 
--   1 Download the jar file from the [latest release]()
--   2 Create an [external java language server](https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=BEXTSERV_managing)
-    -   2.1 Open the Management Portal
-    -   2.2 Go to `System Administration` > `Configuration` > `Connectivity` > `External Language Servers`
-    -   2.3 You can create a new server by clicking on the `Create External Language Server` button or use the default `%Java Server`. (When you want to create a new server, make sure to select the `Java` language and use java version 1.8 or 11)
-    -   2.4 Click on `Start`
--   3 [Register the pex component](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=EPEX_register)
-    -   3.1 Open the Management Portal
-    -   3.2 Go to `Interoperability` > `Configure` > `Production EXtensions Components`
-    -   3.3 Click on `Register New Component`
-    -   3.4 In the field `Remote Classname` enter `ASPB.sap.XMLService` or `ASPB.sap.JSONService`
-    -   3.5 In the field `Proxy Name` the same name as in the `Remote Classname` field will be used by default (you can change it if you want)
-    -   3.6 Select the java language server from step 2 in the field `External Language Server`
-    -   3.7 In the field `Gateway Extra CLASSPATH` add the jar file from step 1
-    -   3.8 Click on `Register`
-    -   3.9 Click on `Refresh`
--   4 [Create a new service](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=AFL_productions#AFL_productions_explore_simple)
-    -   4.1 Open the Management Portal
-    -   4.2 Go to `Interoperability` > `Configure` > `Production`
-    -   4.3 Create a new production or open an existing one
-    -   4.4 Click on the `+` button next to the _Services_
-    -   4.5 In the field `Service Class` select the class from step 3.5
-    -   4.6 Add a Service Name
-    -   4.7 Click on `OK`
-    -   4.8 Configure the [settings](#settings)
+### Setup an external language server
 
-> **Note:** Step 3 is namespace specific. If you want to use the service in another namespace, you have to repeat step 3 in this namespace.
+1. In the Management Portal navigate to _System Administration > Configuration > Connectivity > External Language Servers_
+2. Click on _Create External Language Server_ or configure the standard _%Java Server_ server by double-clicking on the server name
+3. Select _Java_ as the _Server Type_
+4. Select the _sapjco.jar_ in the _Class Path_ field. **The _sapjco.dll_ must be in the same folder as the _sapjco.jar_ file.**
+5. Select the jdk **1.8** for the _Java Home Directory_ field
+6. Click on _Save_
+7. Click on _Start_ next to the server you just created
+
+> **Note:** This step is namespace independent. You can use the same server in multiple namespaces.
+
+### Import proxy classes
+
+1. In the Management Portal navigate to _System Explorer > Classes_
+2. On the left side of the screen select the namespace where you want to use the service
+3. Click on _Import_
+4. Select _Directory_ under _Import from File or a Directory_
+5. Select the _src_ folder from the downloaded repository
+6. Click on _Import_
+
+### Setup a service
+
+1. In the Management Portal navigate to _Interoperability > Configure > Production_
+2. Create a new production or open an existing one
+3. Click on the _+_ button next to the _Services_
+4. In the field _Service Class_ select the class _ASPB.sap.XMLService_ or _ASPB.sap.JSONService_
+5. Add a _Service Name_
+6. Click on _OK_
+
+### Configure the service
+
+2. Select the just created service
+3. Select the _Settings_ tab on the right side of the screen
+4. Under _Remote Business Service: External Language Server Name_ configure the name of the external language server you created in the previous step
+5. Under _Remote Business Service: Gateway Extra CLASSPATH_ configure the path to the _intersystems-sap-service-\*.jar_ file
+6. Configure all SAP connection parameters
+7. Under _SAP Service Settings: Business_ configure the name of the process or the operation you want to call
+8. Click on _Apply_
+9. Start the service
+
+> **Tip:** You can see if the service could be successfully started in the _Log_ tab of the service.
 
 ---
 
@@ -100,40 +120,47 @@ This service receives messages from a SAP System and sends them to an InterSyste
 
 ### SAP Server Connection
 
--   `GatewayHost` _string, required_ - The host address of the SAP Gateway
--   `GatewayService` _string, required_ - The service name of the SAP Gateway. Usually `sapgwNN` whereas NN is the instance number.
+-   `SAPGatewayHost` _string, required_ - The host address of the SAP Gateway
+-   `SAPGatewayService` _string, required_ - The service name of the SAP Gateway. Usually `sapgwNN` whereas NN is the instance number.
 -   `ProgrammID` _string, required_ - The Program ID of this service to identify the connection.
 -   `ConnectionCount` _integer, required_ - The number of connections to the SAP Gateway.
 -   `Repository` _string, required_ - The name of the SAP Repository.
 
 ### SAP Client Connection
 
--   `HostAddress` _string, required_ - The host address of the SAP System.
+-   `SAPHostAddress` _string, required_ - The host address of the SAP System.
 -   `ClientID` _string, required_ - The Client ID of your mandant.
 -   `SystemNumber` _string, required_ - The System Number of the SAP System.
 -   `Username` _string, required_ - The username to connect to the SAP System.
 -   `Password` _string, required_ - The password of the user.
--   `Language` _string, required_ - The language of the SAP System.
+-   `SAPLanguage` _string, required_ - The language of the SAP System.
 
 ### Logging
 
 -   `LogFilePath` _string_ - An absolute Path to a file where the service will log the messages. The file must be already created and writeable, the service will **not** create the file. If no or an invalid path is set, the service will not log the messages.
 -   `ClearLogOnRestart` _boolean_ - If set to true, the log file will be cleared when the service is restarted. _(default: false)_
 
----
+### Remote Business Service
+
+-   `External Language Server Name` _string, required_ - The name of the external language server to connect to.
+-   `Gateway Host` _string_ - The host address of the external language server to connect to. If you use a external language server this can be left empty.
+-   `Gateway Port` _integer_ - The port of the external language server to connect to. If you use a external language server this can be left empty.
+-   `Gateway Extra CLASSPATH` _string, required_ - The path to the _intersystems-sap-service-\*.jar_ file.
+
+<!-- ---
 
 ## Bugs
 
--   _no known bugs_
+-   _no known bugs_ -->
 
 ---
 
 ## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
 
-### [v0.0.1-BETA](https://github.com/phil1436/intersystems-sap-service/tree/0.0.1)
+### [0.0.1-TESTVERSION](https://github.com/phil1436/intersystems-sap-service/tree/0.0.1)
 
 -   _Initial release_
 
 ---
 
-by Philipp Bonin
+by Andreas S. and [Philipp B.](https://github.com/phil1436)

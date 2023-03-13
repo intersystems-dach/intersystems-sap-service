@@ -32,7 +32,6 @@ public class FunctionHandler implements JCoServerFunctionHandler {
         this.FUNCTION_NAME = functionName;
         this.callback = callback;
         this.toJSON = false;
-
     }
 
     /**
@@ -47,7 +46,6 @@ public class FunctionHandler implements JCoServerFunctionHandler {
         this.FUNCTION_NAME = functionName;
         this.callback = callback;
         this.toJSON = toJSON;
-
     }
 
     @Override
@@ -71,12 +69,21 @@ public class FunctionHandler implements JCoServerFunctionHandler {
             }
         } else {
             try {
+                // serverCtx.getRepository().getStructureDefinition(function.getName());
+
+                // get the xsd for the function
+                // String xsd =
+                // serverCtx.getRepository().getStructureDefinition(function.getName())
+
                 callback.call(XMLConverter.convert(function.getImportParameterList().toXML(), function.getName()));
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
+        // serverCtx.getRepository().getStructureDefinition();
+        // http://<host>:<port>/sap/bc/soap/wsdl11?services=<RFC>&sap-client=<client>
+
         /*
          * Iterator<JCoField> i = function.getImportParameterList().iterator();
          * while (i.hasNext()) {
