@@ -7,7 +7,9 @@ import com.sap.conn.jco.server.JCoServerContext;
 import com.sap.conn.jco.server.JCoServerFunctionHandler;
 
 import ASPB.utils.Logger;
+import ASPB.utils.StringWithSchema;
 import ASPB.utils.XMLConverter;
+import ASPB.utils.XSDManager;
 import ASPB.utils.interfaces.Callback;
 
 /**
@@ -23,7 +25,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
     private final boolean toJSON;
 
     // The callback function to call
-    private final Callback<String> callback;
+    private final Callback<StringWithSchema> callback;
 
     /**
      * Create a new generic function handler that will call the callback function
@@ -31,7 +33,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
      * 
      * @param callback The callback function to call
      */
-    public GenericFunctionHandler(Callback<String> callback) {
+    public GenericFunctionHandler(Callback<StringWithSchema> callback) {
         this.callback = callback;
         this.toJSON = false;
     }
@@ -44,7 +46,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
      * @param toJSON   If true the JSON representation will be used, otherwise the
      *                 XML representation will be used.
      */
-    public GenericFunctionHandler(Callback<String> callback, boolean toJSON) {
+    public GenericFunctionHandler(Callback<StringWithSchema> callback, boolean toJSON) {
         this.callback = callback;
         this.toJSON = toJSON;
     }
@@ -55,19 +57,33 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
 
         printRequestInformation(serverCtx, function);
 
-        String result = "";
+        StringWithSchema result = null;
 
         if (toJSON) {
             // return json
-            result = function.getImportParameterList().toJSON();
+            result = new StringWithSchema(function.getImportParameterList().toJSON(), "");
 
         } else {
-            // return xml
+
+            // create xsdSchema
+            String xsdSchema = null;
             try {
-                result = XMLConverter.convert(function.getImportParameterList().toXML(), function.getName());
+                XSDManager.createXSD(function, true);
+                xsdSchema = function.getName();
+            } catch (Exception e) {
+                Logger.error("Error while creating XSD: " + e.getMessage());
+                xsdSchema = "";
+            }
+            // return xml
+            String xml = null;
+            try {
+                xml = XMLConverter.convert(function.getImportParameterList().toXML(), xsdSchema);
             } catch (Exception e) {
                 // TODO handle exception when parsing the xml
+                Logger.error("Error while converting XML: " + e.getMessage());
+                return;
             }
+            result = new StringWithSchema(xml, function.getName());
         }
 
         // call the callback function

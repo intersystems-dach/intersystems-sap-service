@@ -21,6 +21,7 @@ import ASPB.sap.handlers.GenericFunctionHandler;
 import ASPB.sap.handlers.TIDHandler;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
+import ASPB.utils.StringWithSchema;
 import ASPB.utils.annotations.JCOPropertyAnnotation;
 import ASPB.utils.annotations.MyFieldMetadata;
 import ASPB.utils.interfaces.Callback;
@@ -40,7 +41,7 @@ public class SAPServer implements MyServer,
         JCoServerStateChangedListener {
 
     // The callback to the service
-    private Callback<String> callback;
+    private Callback<StringWithSchema> callback;
 
     // The server
     private JCoServer server;
@@ -69,7 +70,7 @@ public class SAPServer implements MyServer,
      * @param toJSON   If the data should be converted to JSON.
      * @param callback The callback to the service.
      */
-    public SAPServer(boolean toJSON, Callback<String> callback) {
+    public SAPServer(boolean toJSON, Callback<StringWithSchema> callback) {
         this.callback = callback;
         this.server = null;
         this.properties = new Properties();
@@ -83,7 +84,7 @@ public class SAPServer implements MyServer,
      * @param properties The properties to be used.
      * @param callback   The callback to the service.
      */
-    public SAPServer(boolean toJSON, Properties properties, Callback<String> callback) {
+    public SAPServer(boolean toJSON, Properties properties, Callback<StringWithSchema> callback) {
         this.callback = callback;
         this.server = null;
         this.properties = properties;
@@ -108,7 +109,7 @@ public class SAPServer implements MyServer,
     public void registerCallback(Callback<?> callback) {
         // TODO check if the callback is of the correct type
 
-        this.callback = (Callback<String>) callback;
+        this.callback = (Callback<StringWithSchema>) callback;
     }
 
     @Override

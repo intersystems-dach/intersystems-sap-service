@@ -6,7 +6,7 @@ Parameter %REMOTECLASSNAME = "ASPB.sap.XMLService";
 
 Parameter %URL = "https://github.com/phil1436/intersystems-sap-service";
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,BurstSize:SAP Service Settings,MaxBufferSize:SAP Service Settings,SAPGatewayHost:SAP Server Connection,SAPGatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,SAPHostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection,LogFilePath:Logging,ClearLogOnRestart:Logging";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,BurstSize:SAP Service Settings,MaxBufferSize:SAP Service Settings,SAPGatewayHost:SAP Server Connection,SAPGatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,SAPHostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection,LogFilePath:Logging,ClearLogOnRestart:Logging,XSDDirectory:XSD,AutoImport:XSD";
 
 /// Ein oder mehrere Klassenpfade (getrennt durch das Zeichen ‚|‘), die zusätzlich zu den im Remote Gateway konfigurierten Pfaden benötigt werden
 Property %gatewayExtraClasspaths As %String(MAXLEN = "");
@@ -65,6 +65,12 @@ Property SystemNumber As %String [ Required ];
 
 /// REQUIRED<br>Set the username. The username is used to connect to the SAP system.
 Property Username As %String (MAXLEN = "") [ Required ];
+
+/// REQUIRED<br>Set the xsd directory. The xsd directory must refer to an already existing directory.
+Property XSDDirectory As %String (MAXLEN = "")[ Required ];
+
+/// If enabled the xsd files will be imported automatically on startup.
+Property AutoImport As %Boolean [ InitialExpression = "false" ];
 
 Method %remoteClassnameGet()
 {
@@ -153,7 +159,29 @@ Method SetPropertyValues()
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"XSDDirectory") = ..XSDDirectory
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"AutoImport") = ..AutoImport
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
 	Quit
+}
+
+ClassMethod CheckIfSchemaExists(schemaName as %String) As %Boolean
+{
+	Set i = ""
+	Do{
+		Set i = $O(^EnsEDI.XML.Schema(i))
+		If i = schemaName {
+			Return 1
+		}
+	} While i '= ""
+	Return 0
 }
 
 }

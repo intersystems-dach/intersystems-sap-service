@@ -14,6 +14,7 @@ import ASPB.sap.dataprovider.DataProviderManager;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
+import ASPB.utils.StringWithSchema;
 import ASPB.utils.annotations.JCOPropertyAnnotation;
 import ASPB.utils.annotations.MyClassMetadata;
 import ASPB.utils.annotations.MyFieldMetadata;
@@ -29,7 +30,8 @@ import ASPB.utils.interfaces.MyService;
  * @version 1.0
  */
 @MyClassMetadata(Description = "A Service to receive messages from a SAP system using the sapjco library and return the message in JSON format.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
-public class JSONService extends com.intersystems.enslib.pex.BusinessService implements Callback<String>, MyService {
+public class JSONService extends com.intersystems.enslib.pex.BusinessService
+        implements Callback<StringWithSchema>, MyService {
 
     /**
      * *****************************
@@ -107,7 +109,7 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
      */
 
     // The buffer
-    private static Buffer<String> buffer = new Buffer<String>(MaxBufferSize);
+    private static Buffer<StringWithSchema> buffer = new Buffer<StringWithSchema>(MaxBufferSize);
 
     // The iris connection
     private IRIS iris;
@@ -173,8 +175,8 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // send
         for (int i = 0; i < burst; i++) {
-            String s = buffer.poll();
-            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s);
+            StringWithSchema s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s.getText());
             try {
                 this.SendRequestAsync(JSONService.BusinessPartner, request);
             } catch (Exception e) {
@@ -208,10 +210,10 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
 
         // send all remaining requests
         for (int i = 0; i < buffer.size(); i++) {
-            String s = buffer.poll();
-            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s);
+            StringWithSchema s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("Ens.StringRequest", "%New", s.getText());
             try {
-                this.SendRequestAsync(XMLService.BusinessPartner, request);
+                this.SendRequestAsync(JSONService.BusinessPartner, request);
             } catch (Exception e) {
                 Logger.error("Error while sending request: " + e.getMessage());
             }
@@ -229,7 +231,7 @@ public class JSONService extends com.intersystems.enslib.pex.BusinessService imp
     }
 
     @Override
-    public boolean call(String arg0) {
+    public boolean call(StringWithSchema arg0) {
         return buffer.add(arg0);
     }
 

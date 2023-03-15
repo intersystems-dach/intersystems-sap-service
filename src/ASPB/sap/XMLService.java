@@ -14,6 +14,8 @@ import ASPB.sap.dataprovider.DataProviderManager;
 import ASPB.utils.Buffer;
 import ASPB.utils.Logger;
 import ASPB.utils.ServiceManager;
+import ASPB.utils.StringWithSchema;
+import ASPB.utils.XSDManager;
 import ASPB.utils.annotations.JCOPropertyAnnotation;
 import ASPB.utils.annotations.MyClassMetadata;
 import ASPB.utils.annotations.MyFieldMetadata;
@@ -29,7 +31,8 @@ import ASPB.utils.interfaces.MyService;
  * @version 1.0
  */
 @MyClassMetadata(Description = "A Service to receive messages from a SAP system using the sapjco library and return the message in XML format.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
-public class XMLService extends com.intersystems.enslib.pex.BusinessService implements Callback<String>, MyService {
+public class XMLService extends com.intersystems.enslib.pex.BusinessService
+        implements Callback<StringWithSchema>, MyService {
 
     /**
      * *****************************
@@ -100,6 +103,13 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     @MyFieldMetadata(Category = "Logging", Description = "If enabled the log file will be cleared on restart.")
     public static boolean ClearLogOnRestart = false;
 
+    // XSD
+    @MyFieldMetadata(Category = "XSD", IsRequired = true, Description = "REQUIRED<br>Set the xsd directory. The xsd directory must refer to an already existing directory.")
+    public static String XSDDirectory = "";
+
+    @MyFieldMetadata(Category = "XSD", Description = "If enabled the xsd files will be imported automatically on startup.")
+    public static boolean AutoImport = false;
+
     /**
      * ******************
      * *** Attributes ***
@@ -107,7 +117,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
      */
 
     // The buffer
-    private static Buffer<String> buffer = new Buffer<String>(MaxBufferSize);
+    private static Buffer<StringWithSchema> buffer = new Buffer<StringWithSchema>(MaxBufferSize);
 
     // The iris connection
     private IRIS iris;
@@ -134,6 +144,11 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
         // clear the log file
         if (ClearLogOnRestart)
             Logger.clear();
+
+        // xsd
+        XSDManager.XSD_DIRECTORY = XSDDirectory;
+        XSDManager.AUTO_IMPORT = AutoImport;
+        XSDManager.importXSDFiles();
 
         // init the server
         server = new SAPServer(false);
@@ -174,8 +189,10 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // send
         for (int i = 0; i < burst; i++) {
-            String s = buffer.poll();
-            IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s);
+            StringWithSchema s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s.getText());
+            request.set("DocType", s.getSchema());
+
             try {
                 this.SendRequestAsync(XMLService.BusinessPartner, request);
             } catch (Exception e) {
@@ -194,10 +211,6 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     @Override
     public void OnTearDown() throws Exception {
 
-        // TODO
-        // was passiert mit dem buffer wenn der service beendet wird???
-        // buffer geht verloren!!!
-
         // stop the server
         if (server.stop()) {
             Logger.log("SAPService stopped");
@@ -209,8 +222,9 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
 
         // send all remaining requests
         for (int i = 0; i < buffer.size(); i++) {
-            String s = buffer.poll();
-            IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s);
+            StringWithSchema s = buffer.poll();
+            IRISObject request = (IRISObject) iris.classMethodObject("EnsLib.EDI.XML.Document", "%New", s.getText());
+            request.set("DocType", s.getSchema());
             try {
                 this.SendRequestAsync(XMLService.BusinessPartner, request);
             } catch (Exception e) {
@@ -230,7 +244,7 @@ public class XMLService extends com.intersystems.enslib.pex.BusinessService impl
     }
 
     @Override
-    public boolean call(String arg0) {
+    public boolean call(StringWithSchema arg0) {
         return buffer.add(arg0);
     }
 
