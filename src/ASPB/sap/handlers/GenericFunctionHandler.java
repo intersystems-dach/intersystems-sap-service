@@ -74,6 +74,7 @@ public class GenericFunctionHandler implements JCoServerFunctionHandler {
                 Logger.error("Error while creating XSD: " + e.getMessage());
                 xsdSchema = "";
             }
+
             // return xml
             String xml = null;
             try {

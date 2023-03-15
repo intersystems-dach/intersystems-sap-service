@@ -92,6 +92,7 @@ public abstract class XSDManager {
 
         // check if xsd already exists
         if (availableXSDs.containsKey(function.getName())) {
+            // TODO: check if necessary
             // update xsd
             if (!availableXSDs.get(function.getName()).equals(xsd)) {
                 writeXSDtoFile(xsd, function.getName());
@@ -105,7 +106,6 @@ public abstract class XSDManager {
             availableXSDs.put(function.getName(), xsd);
             Logger.log("XSD " + function.getName() + " created");
             importXSDtoIRIS(function.getName());
-
         }
     }
 
