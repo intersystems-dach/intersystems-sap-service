@@ -1,4 +1,4 @@
-package ASPB.utils.annotations;
+package com.intersystems.dach.sap.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for JCO properties
+ * Annotation for JCo properties
  * 
  * @author Philipp Bonin
  * @version 1.0
@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JCOPropertyAnnotation {
+public @interface SAPJCoPropertyAnnotation {
 
     /**
      * The name of the JCO property refered by
@@ -23,5 +23,5 @@ public @interface JCOPropertyAnnotation {
      * 
      * @return the name of the JCO property
      */
-    String jcoName();
+    String jCoName();
 }

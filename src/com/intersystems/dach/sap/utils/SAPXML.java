@@ -1,4 +1,4 @@
-package ASPB.utils;
+package com.intersystems.dach.sap.utils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -25,7 +25,10 @@ import org.xml.sax.SAXException;
  * @version 1.0
  * 
  */
-public abstract class XMLConverter {
+public final class SAPXML {
+
+    // make this a static class
+    private SAPXML() {}
 
     // XML namespace and header
     private static final String XMLNAMESPACE = "urn:isc:rfc";

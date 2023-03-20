@@ -1,4 +1,4 @@
-package ASPB.utils;
+package com.intersystems.dach.ens.bs.utils;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -21,7 +21,6 @@ public class Buffer<T> {
 
     private int maxBufferSize;
 
-    private boolean overflow = false;
 
     /**
      * Create a new buffer with a optional maximum size.
@@ -37,7 +36,6 @@ public class Buffer<T> {
 
         queue = new ConcurrentLinkedQueue<T>();
 
-        Logger.log("Buffer created with " + (maxBufferSize == -1 ? "unlimited size" : "size " + maxBufferSize));
     }
 
     /**
@@ -46,8 +44,6 @@ public class Buffer<T> {
     public Buffer() {
         maxBufferSize = -1;
         queue = new ConcurrentLinkedQueue<T>();
-
-        Logger.log("Buffer created with unlimited size");
     }
 
     /**
@@ -59,10 +55,9 @@ public class Buffer<T> {
      */
     public boolean add(T item) {
         if (maxBufferSize > 0 && queue.size() >= maxBufferSize) {
-            overflow = true;
             return false;
         }
-
+        
         return queue.add(item);
     }
 
@@ -82,9 +77,5 @@ public class Buffer<T> {
      */
     public int size() {
         return queue.size();
-    }
-
-    public boolean isOverflow() {
-        return overflow;
     }
 }
