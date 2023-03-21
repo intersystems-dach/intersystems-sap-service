@@ -1,4 +1,4 @@
-package com.intersystems.dach.ens.bs.annotations;
+package com.intersystems.dach.ens.common.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,17 +13,13 @@ import java.lang.annotation.Target;
  * not exist yet. To compile the project using newer version simply comment this
  * file out and add com.intersystems.enslib.pex.FieldMetadata to the imports.
  */
-@Target(ElementType.FIELD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public abstract @interface FieldMetadata {
-
-    public abstract boolean IsRequired() default false;
-
-    public abstract java.lang.String DataType() default "";
-
-    public abstract java.lang.String Category() default "Additional";
+public abstract @interface ClassMetadata {
 
     public abstract java.lang.String Description() default "";
 
-    public abstract boolean ExcludeFromSettings() default false;
+    public abstract java.lang.String InfoURL() default "";
+
+    public abstract java.lang.String IconURL() default "";
 }

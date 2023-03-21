@@ -9,7 +9,6 @@ import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.server.JCoServerContext;
 import com.sap.conn.jco.server.JCoServerFunctionHandler;
 
-
 /**
  * Generic function handler that can be used to handle any function.
  * 
@@ -25,13 +24,17 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
     // The callback function to call
     private final SAPServerImportDataHandler importDataHandler;
 
+    private long confirmationTimeoutMs;
+
     /**
      * Create a new generic function handler that will call the callback function
      * with the XML representation of the import parameter list.
      * 
      * @param callback The callback function to call
      */
-    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, boolean useJson) {
+    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, 
+            boolean useJson, long confirmationTimeoutMs) {
+        this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.importDataHandler = importDataHandler;
         this.useJson = useJson;
     }
@@ -53,21 +56,18 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
                 throw new AbapClassException(e);
             }
         }
-
-        // call the import data handler function
-        SAPServerImportData importData = new SAPServerImportData(functionName, data, schema);
-        if (!importDataHandler.onImportDataReceived(importData)) {
-            throw new AbapException("SYSTEM_FAILURE", "Could not process import parameters.");
-        }
-
         try {
-            synchronized(importData){
-                importData.wait(10000);
+            // call the import data handler function
+            SAPServerImportData importData = new SAPServerImportData(functionName, data, useJson, schema);
+            importDataHandler.onImportDataReceived(importData);
+            synchronized (importData) {
+                importData.wait(confirmationTimeoutMs);
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
+        } catch (Exception e) {
+            throw new AbapException("SYSTEM_FAILURE", "Could not process import parameters: " + e.getMessage());
         }
-
     }
 
 }

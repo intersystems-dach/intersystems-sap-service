@@ -1,16 +1,17 @@
-package com.intersystems.dach.ens.bs;
+package com.intersystems.dach.ens.sap;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.intersystems.dach.ens.bs.annotations.ClassMetadata;
-import com.intersystems.dach.ens.bs.annotations.FieldMetadata;
-import com.intersystems.dach.ens.bs.testing.SAPServiceTestCase;
-import com.intersystems.dach.ens.bs.testing.SAPServiceTestRunner;
-import com.intersystems.dach.ens.bs.testing.TestCases;
-import com.intersystems.dach.ens.bs.utils.Buffer;
-import com.intersystems.dach.ens.bs.utils.IRISXSDSchemaImporter;
+import com.intersystems.dach.ens.common.annotations.ClassMetadata;
+import com.intersystems.dach.ens.common.annotations.FieldMetadata;
+import com.intersystems.dach.ens.sap.testing.SAPServiceTestCase;
+import com.intersystems.dach.ens.sap.testing.SAPServiceTestRunner;
+import com.intersystems.dach.ens.sap.testing.TestCases;
+import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
 import com.intersystems.dach.sap.SAPServer;
 import com.intersystems.dach.sap.SAPServerImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
@@ -27,7 +28,7 @@ import com.sap.conn.jco.ext.ServerDataProvider;
 /**
  * A Service to receive messages from a SAP system.
  * 
- * @author Philipp Bonin
+ * @author Philipp Bonin, Andreas Schütz
  * @version 1.0
  */
 @ClassMetadata(Description = "A InterSystems Business Service to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
@@ -53,11 +54,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     @FieldMetadata(Category = "SAP Service Settings", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
     public String XMLSchemaPath = "";
 
-    @FieldMetadata(Category = "SAP Service Settings", Description = "Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.")
-    public int MaxBufferSize = 100;
-
-    @FieldMetadata(Category = "SAP Service Settings", Description = "If the buffer is the service will retry to add incomming messages to the buffer for a specified period.")
-    public int RetryPeriodSeconds = 10;
+    @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "REQUIRED<br>This is the maximum time the SAP function handler waits till the processing of the input data has been confirmed. If the confirmation takes longer an exception is thrown. The value should be at least twice (better three times) the Inbound Adapter Call Interval.")
+    public Integer ConfirmationTimeoutSec = 10;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "Send test messages for debugging and testing purposes.")
     public boolean EnableTesting = false;
@@ -116,19 +114,20 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
 
     private SAPServer sapServer;
 
-    private Buffer<SAPServerImportData> buffer;
-    private Buffer<Error> errorBuffer;
-    private Buffer<Exception> exceptionBuffer;
+    private Queue<SAPServerImportData> importDataQueue;
+    private Queue<Error> errorBuffer;
+    private Queue<Exception> exceptionBuffer;
+
+    private boolean warningActiveFlag = false;
 
     private IRISXSDSchemaImporter irisSchemaImporter;
 
     @Override
     public void OnInit() throws Exception {
-
         // Prepare buffers
-        buffer = new Buffer<SAPServerImportData>(this.MaxBufferSize);
-        errorBuffer = new Buffer<Error>();
-        exceptionBuffer = new Buffer<Exception>();
+        importDataQueue = new ConcurrentLinkedQueue<SAPServerImportData>();
+        errorBuffer = new ConcurrentLinkedQueue<Error>();
+        exceptionBuffer = new ConcurrentLinkedQueue<Exception>();
 
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
@@ -144,6 +143,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             sapServer = new SAPServer(settings, this, this.UseJSON);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
+            sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
             sapServer.start();
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
@@ -172,63 +172,72 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         testRunner.runTestsAsync(this);
     }
 
-    private boolean processImportDataQueue() {
-        // set the burst size
-        int burst = buffer.size();
+    private boolean processImportData() {
+        if (importDataQueue.isEmpty()) {
+            // No data in queue, wait for next call intervall
+            _WaitForNextCallInterval = true;
+            // Reset warning flag
+            warningActiveFlag = false;
+            return true;
+        }
+        
+        if (!warningActiveFlag && importDataQueue.size() > 100) {
+            LOGWARNING("High load. Current messages in Queue: " + importDataQueue.size());
+            warningActiveFlag = true;
+        }
+
+        _WaitForNextCallInterval = false;
         boolean result = true;
+        SAPServerImportData importData = importDataQueue.poll();
+        IRISObject request;       
+        if (UseJSON) {
+            request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
+                    "Ens.StringRequest",
+                    "%New",
+                    importData.getData());
+        } else {
+            request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
+                    "EnsLib.EDI.XML.Document",
+                    "%New",
+                    importData.getData());
+            request.set("DocType", importData.getFunctionName());
 
-        // send
-        for (int i = 0; i < burst; i++) {
-            SAPServerImportData importData = buffer.poll();
-
-            IRISObject request;
-            if (UseJSON) {
-                request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
-                        "Ens.StringRequest",
-                        "%New",
-                        importData.getData());
-            } else {
-                request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
-                        "EnsLib.EDI.XML.Document",
-                        "%New",
-                        importData.getData());
-                request.set("DocType", importData.getFunctionName());
-
-                if (ImportXMLSchemas && irisSchemaImporter != null) {
-                    try {
-                        boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
-                                importData.getFunctionName(),
-                                importData.getSchema());
-                        if (importResult) {
-                            LOGINFO("Imported new XML schema: " + importData.getFunctionName());
-                        }
-                    } catch (Exception e) {
-                        LOGERROR("Error while importing XML schema for function '" + 
-                            importData.getFunctionName() + "': " + e.getMessage());
+            if (ImportXMLSchemas && irisSchemaImporter != null) {
+                try {
+                    boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
+                            importData.getFunctionName(),
+                            importData.getSchema());
+                    if (importResult) {
+                        LOGINFO("Imported new XML schema: " + importData.getFunctionName());
                     }
-
+                } catch (Exception e) {
+                    LOGERROR("Error while importing XML schema for function '" + 
+                        importData.getFunctionName() + "': " + e.getMessage());
                 }
-            }
-
-            try {
-                this.SendRequestAsync(this.BusinessPartner, request);
-                synchronized(importData){
-                    importData.notifyAll();
-                }
-            } catch (IllegalMonitorStateException e) {
-                LOGERROR(e.toString());
-            } catch (Exception e) {
-                LOGERROR("Error while sending request: " + e.getMessage());
-                result = false;
             }
         }
 
+        try {
+            this.SendRequestAsync(this.BusinessPartner, request);
+            synchronized(importData){
+                importData.notifyAll();
+            }
+        } catch (IllegalMonitorStateException e) {
+            LOGWARNING("Confirmation of import data processing failed.");
+        } catch (Exception e) {
+            LOGERROR("Error while sending request: " + e.getMessage());
+            result = false;
+        }
+
+        /* Wait for next call intervall if queue is empty or call
+           OnProcessInput immediately again. */
+        _WaitForNextCallInterval = importDataQueue.isEmpty();
         return result;
     }
 
     @Override
-    public Object OnProcessInput(Object msg) throws Exception {
-        boolean result = this.processImportDataQueue();
+    public Object OnProcessInput(Object msg) throws Exception {        
+        boolean result = this.processImportData();
 
         // Handle errors and exceptions
         boolean errorOrExceptionOccured = false;
@@ -261,32 +270,16 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             LOGERROR("An exception occured during stop of the server: " + e.getMessage());
         }
 
-        // Empty imort data queue
-        this.processImportDataQueue();
-
         // Close iris connection
         GatewayContext.getIRIS().close();
 
+        // Reset iris XML schema importer
         this.irisSchemaImporter = null;
     }
 
     @Override
-    public boolean onImportDataReceived(SAPServerImportData data) {
-        int retryCount = 0;
-        while (!buffer.add(data)) {
-            retryCount++;
-            if (retryCount > this.RetryPeriodSeconds) {
-                this.errorBuffer.add(new Error("Could not add incomming message to buffer."));
-                return false;
-            }
-
-            // Wait 1 second until next retry
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-        }
-        return true;
+    public void onImportDataReceived(SAPServerImportData data) {
+        importDataQueue.add(data);
     }
 
     @Override
@@ -326,6 +319,14 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             }
         }
         return properties;
+    }
+
+    
+    /**
+     * @return The name of the inbound adapter to be used with this class.
+     */
+    public String getAdapterType() {
+        return "com.intersystems.dach.ens.adapter.ManagedInboundAdapter";
     }
 
 }

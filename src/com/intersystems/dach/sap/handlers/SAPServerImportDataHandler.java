@@ -16,6 +16,6 @@ public interface SAPServerImportDataHandler {
      * @param args the SAPImportData
      * @return the result of the method
      */
-    boolean onImportDataReceived(SAPServerImportData data);
+    void onImportDataReceived(SAPServerImportData data);
 
 }

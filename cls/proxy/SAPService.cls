@@ -2,12 +2,14 @@
 Class com.intersystems.dach.ens.bs.SAPService Extends EnsLib.PEX.BusinessService [ GeneratedBy = EnsLib.PEX.Utils ]
 {
 
+Parameter ADAPTER = "com.intersystems.dach.ens.adapter.ManagedInboundAdapter";
+
 Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.bs.SAPService";
 
 Parameter %URL = "https://github.com/phil1436/intersystems-sap-service";
 
 // TODO: Hide EnableTesting for productive release.
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,UseJSON:SAP Service Settings,ImportXMLSchemas:SAP Service Settings,XMLSchemaPath:SAP Service Settings,MaxBufferSize:SAP Service Settings,RetryPeriodSeconds:SAP Service Settings,EnableTesting:SAP Service Settings,GatewayHost:SAP Server Connection,GatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,HostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,UseJSON:SAP Service Settings,ImportXMLSchemas:SAP Service Settings,XMLSchemaPath:SAP Service Settings,ConfirmationTimeoutSec:SAP Service Settings,EnableTesting:SAP Service Settings,GatewayHost:SAP Server Connection,GatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,HostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -24,6 +26,9 @@ Property BusinessPartner As %String(MAXLEN = "") [ Required ];
 
 /// REQUIRED<br>Set the client ID. The client ID is used to connect to the SAP system.
 Property ClientID As %String [ Required ];
+
+//"REQUIRED<br>This is the maximum time the SAP function handler waits till the processing of the input data has been confirmed. If the confirmation takes longer an exception is thrown. The value should be at least three times the Inbound Adapter Call Interval.
+Property ConfirmationTimeoutSec As %Integer(MINVAL=1, MAXVAL=600) [ InitialExpression = 10, Required ];
 
 /// REQUIRED<br>Set the connection count. The connection count is used to connect to the SAP system.
 Property ConnectionCount As %Integer [ InitialExpression = 1, Required ];
@@ -43,9 +48,6 @@ Property HostAddress As %String(MAXLEN = "") [ Required ];
 /// If enabled new XML schemas will be saved and imported to the production automatically.
 Property ImportXMLSchemas As %Boolean [ InitialExpression = 0 ];
 
-/// Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.
-Property MaxBufferSize As %Integer [ InitialExpression = 100 ];
-
 /// REQUIRED<br>Set the password. The password is used to connect to the SAP system.
 Property Password As %String [ Required ];
 
@@ -54,9 +56,6 @@ Property ProgrammID As %String(MAXLEN = "") [ Required ];
 
 /// Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST
 Property Repository As %String(MAXLEN = "");
-
-/// If the buffer is the service will retry to add incomming messages to the buffer for a specified period.
-Property RetryPeriodSeconds As %Integer [ InitialExpression = 10 ];
 
 /// REQUIRED<br>Set the language. The language is used to connect to the SAP system.
 Property SAPLanguage As %String [ Required ];
@@ -101,12 +100,7 @@ Method SetPropertyValues()
 		$$$LOGWARNING(ex.DisplayString())
 	}
 	try {
-		set $property(..%gatewayProxy,"MaxBufferSize") = ..MaxBufferSize
-	} catch ex {
-		$$$LOGWARNING(ex.DisplayString())
-	}
-	try {
-		set $property(..%gatewayProxy,"RetryPeriodSeconds") = ..RetryPeriodSeconds
+		set $property(..%gatewayProxy,"ConfirmationTimeoutSec") = ..ConfirmationTimeoutSec
 	} catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}

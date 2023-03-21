@@ -15,16 +15,16 @@ public class SAPServerImportData {
 
     private final String schema;
 
+    private final boolean isJSON;
+
     /**
      * Create a new SAPImportData object without schema
      * 
      * @param data   - the data
      * @param schema - the schema
      */
-    public SAPServerImportData(String functionName, String data) {
-        this.functionName = functionName;
-        this.data = data;
-        this.schema = null;
+    public SAPServerImportData(String functionName, String data, boolean isJSON) {
+        this(functionName, data, isJSON, null);
     }
 
     /**
@@ -33,9 +33,10 @@ public class SAPServerImportData {
      * @param data   - the data
      * @param schema - the schema
      */
-    public SAPServerImportData(String functionName, String data, String schema) {
+    public SAPServerImportData(String functionName, String data, boolean isJSON, String schema) {
         this.functionName = functionName;
         this.data = data;
+        this.isJSON = isJSON;
         this.schema = schema;
     }
 
@@ -64,6 +65,14 @@ public class SAPServerImportData {
      */
     public String getData() {
         return data;
+    }
+
+    /**
+     * Indicates if the data is in JSON format instead of XML.
+     * @return ture if data is in JSON format, false if in XML format.
+     */
+    public boolean isJSON() {
+        return isJSON;
     }
 
 }

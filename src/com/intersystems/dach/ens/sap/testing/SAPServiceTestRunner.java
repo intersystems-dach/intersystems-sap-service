@@ -1,8 +1,9 @@
-package com.intersystems.dach.ens.bs.testing;
+package com.intersystems.dach.ens.sap.testing;
 
 import java.util.Collection;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.intersystems.dach.ens.bs.utils.Buffer;
 import com.intersystems.dach.sap.SAPServerImportData;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 
@@ -14,7 +15,7 @@ import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
  */
 public class SAPServiceTestRunner implements Runnable {
 
-    Buffer<SAPServiceTestCase> testCaseBuffer = new Buffer<SAPServiceTestCase>();
+    Queue<SAPServiceTestCase> testCaseBuffer = new ConcurrentLinkedQueue<SAPServiceTestCase>();
     SAPServerImportDataHandler importDataHandler = null;
     Boolean isRunning = false;
 

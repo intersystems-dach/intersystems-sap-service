@@ -1,4 +1,4 @@
-package com.intersystems.dach.ens.bs.testing;
+package com.intersystems.dach.ens.sap.testing;
 
 import com.intersystems.dach.sap.SAPServerImportData;
 

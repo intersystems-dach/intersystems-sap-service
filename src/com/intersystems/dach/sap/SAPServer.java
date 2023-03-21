@@ -46,6 +46,8 @@ public class SAPServer implements JCoServerErrorListener,
 
     private boolean useJson;
 
+    private int confirmationTimeoutMs = 20000;
+
     // Event handlers
     private Collection<SAPServerErrorHandler> errorHandlers;
     private Collection<SAPServerExceptionHandler> exceptionHandlers;
@@ -54,11 +56,25 @@ public class SAPServer implements JCoServerErrorListener,
     /**
      * Initializes the server in XML mode.
      * 
-     * @param settings  SAP server settings.
+     * @param settings          SAP server settings.
      * @param importDataHandler Import data handler.
      */
     public SAPServer(Properties settings, SAPServerImportDataHandler importDataHandler) {
         this(settings, importDataHandler, false);
+    }
+
+    /**
+     * Set the confirmation timeout. This is the time the function handler waits
+     * till the processing of the input data has been confirmed.
+     * @param confirmationTimeoutMs Must be at least 200 ms.
+     */
+    public boolean setConfirmationTimeoutMs(int confirmationTimeoutMs) {
+        if (confirmationTimeoutMs >= 200) {
+            this.confirmationTimeoutMs = confirmationTimeoutMs;
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -79,7 +95,7 @@ public class SAPServer implements JCoServerErrorListener,
             SAPServer.destinationDataProvider = new DestinationDataProviderImpl(settings);
             Environment.registerDestinationDataProvider(SAPServer.destinationDataProvider);
         }
-        
+
         if (SAPServer.serverDataProvider == null) {
             SAPServer.serverDataProvider = new ServerDataProviderImpl(settings);
             Environment.registerServerDataProvider(SAPServer.serverDataProvider);
@@ -99,11 +115,13 @@ public class SAPServer implements JCoServerErrorListener,
             throw new Exception("Server is already running.");
         }
 
-        this.jCoServer = JCoServerFactory.getServer(serverDataProvider.getServerProperties("").getProperty(ServerDataProvider.JCO_PROGID));
+        this.jCoServer = JCoServerFactory
+                .getServer(serverDataProvider.getServerProperties("").getProperty(ServerDataProvider.JCO_PROGID));
 
         // Add generic Function handler
         DefaultServerHandlerFactory.FunctionHandlerFactory factory = new DefaultServerHandlerFactory.FunctionHandlerFactory();
-        factory.registerGenericHandler(new JCoServerFunctionHandlerImpl(importDataHandler, useJson));
+        factory.registerGenericHandler(
+                new JCoServerFunctionHandlerImpl(importDataHandler, useJson, confirmationTimeoutMs));
         jCoServer.setCallHandlerFactory(factory);
 
         // Add TID handler

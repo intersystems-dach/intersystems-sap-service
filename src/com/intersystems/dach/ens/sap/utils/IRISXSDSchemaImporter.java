@@ -1,4 +1,4 @@
-package com.intersystems.dach.ens.bs.utils;
+package com.intersystems.dach.ens.sap.utils;
 
 import java.io.File;
 import java.io.FileWriter;
