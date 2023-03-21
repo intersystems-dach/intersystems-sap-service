@@ -13,6 +13,6 @@ public interface SAPServerErrorHandler {
      * 
      * @param err error object
      */
-    public void OnErrorOccured(Error err);
+    public void onErrorOccured(Error err);
 
 }

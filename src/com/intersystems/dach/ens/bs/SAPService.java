@@ -1,11 +1,16 @@
 package com.intersystems.dach.ens.bs;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.Properties;
 
+import com.intersystems.dach.ens.bs.annotations.ClassMetadata;
+import com.intersystems.dach.ens.bs.annotations.FieldMetadata;
+import com.intersystems.dach.ens.bs.testing.SAPServiceTestCase;
+import com.intersystems.dach.ens.bs.testing.SAPServiceTestRunner;
+import com.intersystems.dach.ens.bs.testing.TestCases;
 import com.intersystems.dach.ens.bs.utils.Buffer;
-import com.intersystems.dach.ens.bs.annotations.ClassMetadata; //intersystems-util-3.2.0 or older
-import com.intersystems.dach.ens.bs.annotations.FieldMetadata; //intersystems-util-3.2.0 or older
+import com.intersystems.dach.ens.bs.utils.IRISXSDSchemaImporter;
 import com.intersystems.dach.sap.SAPServer;
 import com.intersystems.dach.sap.SAPServerImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
@@ -42,11 +47,20 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled the service will return a JSON object instead of a XML object")
     public boolean UseJSON = false;
 
+    @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled new XML schemas will be saved and imported to the production automatically.")
+    public boolean ImportXMLSchemas = false;
+
+    @FieldMetadata(Category = "SAP Service Settings", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
+    public String XMLSchemaPath = "";
+
     @FieldMetadata(Category = "SAP Service Settings", Description = "Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.")
     public int MaxBufferSize = 100;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "If the buffer is the service will retry to add incomming messages to the buffer for a specified period.")
     public int RetryPeriodSeconds = 10;
+
+    @FieldMetadata(Category = "SAP Service Settings", Description = "Send test messages for debugging and testing purposes.")
+    public boolean EnableTesting = false;
 
     // Server Connection
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWHOST)
@@ -106,6 +120,8 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     private Buffer<Error> errorBuffer;
     private Buffer<Exception> exceptionBuffer;
 
+    private IRISXSDSchemaImporter irisSchemaImporter;
+
     @Override
     public void OnInit() throws Exception {
 
@@ -113,6 +129,14 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         buffer = new Buffer<SAPServerImportData>(this.MaxBufferSize);
         errorBuffer = new Buffer<Error>();
         exceptionBuffer = new Buffer<Exception>();
+
+        // Prepare Schema Import
+        if (!UseJSON && ImportXMLSchemas) {
+            LOGINFO("XML Schemas import is enabled.");
+            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
+            String xsdDir = irisSchemaImporter.initialize();
+            LOGINFO("Created XML schema folder: " + xsdDir);
+        }
 
         // Prepare SAP JCo server
         try {
@@ -126,9 +150,29 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             LOGERROR("SAPService could not be started: " + e.getMessage());
             throw new RuntimeException();
         }
+
+        if (this.EnableTesting) {
+            LOGWARNING("Testing is enabled.");
+            testing();
+        }
+
     }
 
-    private boolean ProcessImportDataQueue() {
+    private void testing() {
+        SAPServiceTestRunner testRunner = new SAPServiceTestRunner();
+        Collection<SAPServiceTestCase> testCases;
+        if (this.UseJSON) {
+            testCases = TestCases.getJSONTestCases();
+            LOGINFO("Running " + testCases.size() + " JSON test cases.");
+        } else {
+            testCases = TestCases.getXMLTestCases();
+            LOGINFO("Running " + testCases.size() + " XML test cases.");
+        }
+        testRunner.addTestCases(testCases);
+        testRunner.runTestsAsync(this);
+    }
+
+    private boolean processImportDataQueue() {
         // set the burst size
         int burst = buffer.size();
         boolean result = true;
@@ -138,7 +182,6 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             SAPServerImportData importData = buffer.poll();
 
             IRISObject request;
-
             if (UseJSON) {
                 request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
                         "Ens.StringRequest",
@@ -151,11 +194,29 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
                         importData.getData());
                 request.set("DocType", importData.getFunctionName());
 
-                // TODO schema import handling
+                if (ImportXMLSchemas && irisSchemaImporter != null) {
+                    try {
+                        boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
+                                importData.getFunctionName(),
+                                importData.getSchema());
+                        if (importResult) {
+                            LOGINFO("Imported new XML schema: " + importData.getFunctionName());
+                        }
+                    } catch (Exception e) {
+                        LOGERROR("Error while importing XML schema for function '" + 
+                            importData.getFunctionName() + "': " + e.getMessage());
+                    }
+
+                }
             }
 
             try {
                 this.SendRequestAsync(this.BusinessPartner, request);
+                synchronized(importData){
+                    importData.notifyAll();
+                }
+            } catch (IllegalMonitorStateException e) {
+                LOGERROR(e.toString());
             } catch (Exception e) {
                 LOGERROR("Error while sending request: " + e.getMessage());
                 result = false;
@@ -167,7 +228,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
 
     @Override
     public Object OnProcessInput(Object msg) throws Exception {
-        boolean result = this.ProcessImportDataQueue();
+        boolean result = this.processImportDataQueue();
 
         // Handle errors and exceptions
         boolean errorOrExceptionOccured = false;
@@ -201,14 +262,16 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         }
 
         // Empty imort data queue
-        this.ProcessImportDataQueue();
+        this.processImportDataQueue();
 
         // Close iris connection
         GatewayContext.getIRIS().close();
+
+        this.irisSchemaImporter = null;
     }
 
     @Override
-    public boolean OnImportDataReceived(SAPServerImportData data) {
+    public boolean onImportDataReceived(SAPServerImportData data) {
         int retryCount = 0;
         while (!buffer.add(data)) {
             retryCount++;
@@ -227,12 +290,12 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     }
 
     @Override
-    public void OnErrorOccured(Error err) {
+    public void onErrorOccured(Error err) {
         this.errorBuffer.add(err);
     }
 
     @Override
-    public void OnExceptionOccured(Exception e) {
+    public void onExceptionOccured(Exception e) {
         this.exceptionBuffer.add(e);
     }
 

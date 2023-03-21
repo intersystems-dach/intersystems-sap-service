@@ -13,6 +13,6 @@ public interface SAPServerExceptionHandler {
      * 
      * @param e exception object
      */
-    public void OnExceptionOccured(Exception e);
+    public void onExceptionOccured(Exception e);
 
 }

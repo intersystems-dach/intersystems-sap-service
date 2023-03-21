@@ -168,7 +168,7 @@ public class SAPServer implements JCoServerErrorListener,
     @Override
     public void serverStateChangeOccurred(JCoServer jcoServer, JCoServerState oldState, JCoServerState newState) {
         for (SAPServerStateHandler handler : stateHandlers) {
-            handler.OnStateChanged(oldState, newState);
+            handler.onStateChanged(oldState, newState);
         }
     }
 
@@ -180,7 +180,7 @@ public class SAPServer implements JCoServerErrorListener,
             Exception exception) {
 
         for (SAPServerExceptionHandler handler : exceptionHandlers) {
-            handler.OnExceptionOccured(exception);
+            handler.onExceptionOccured(exception);
         }
 
     }
@@ -193,7 +193,7 @@ public class SAPServer implements JCoServerErrorListener,
             Error error) {
 
         for (SAPServerErrorHandler handler : errorHandlers) {
-            handler.OnErrorOccured(error);
+            handler.onErrorOccured(error);
         }
     }
 }

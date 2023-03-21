@@ -6,7 +6,8 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.bs.SAPService";
 
 Parameter %URL = "https://github.com/phil1436/intersystems-sap-service";
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,UseJSON:SAP Service Settings,MaxBufferSize:SAP Service Settings,RetryPeriodSeconds:SAP Service Settings,GatewayHost:SAP Server Connection,GatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,HostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection";
+// TODO: Hide EnableTesting for productive release.
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,UseJSON:SAP Service Settings,ImportXMLSchemas:SAP Service Settings,XMLSchemaPath:SAP Service Settings,MaxBufferSize:SAP Service Settings,RetryPeriodSeconds:SAP Service Settings,EnableTesting:SAP Service Settings,GatewayHost:SAP Server Connection,GatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,HostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -27,6 +28,9 @@ Property ClientID As %String [ Required ];
 /// REQUIRED<br>Set the connection count. The connection count is used to connect to the SAP system.
 Property ConnectionCount As %Integer [ InitialExpression = 1, Required ];
 
+/// Send test messages for debugging and testing purposes.
+Property EnableTesting As %Boolean [ InitialExpression = 0 ];
+
 /// REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.
 Property GatewayHost As %String(MAXLEN = "") [ Required ];
 
@@ -36,8 +40,8 @@ Property GatewayService As %String [ Required ];
 /// REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.
 Property HostAddress As %String(MAXLEN = "") [ Required ];
 
-/// REQUIRED<br>Set the language. The language is used to connect to the SAP system.
-Property SAPLanguage As %String [ Required ];
+/// If enabled new XML schemas will be saved and imported to the production automatically.
+Property ImportXMLSchemas As %Boolean [ InitialExpression = 0 ];
 
 /// Set the maximum buffer size. It descripes how many elements can be added to the buffer. If the maximum buffer size is set to 0, the buffer size will not be limited.
 Property MaxBufferSize As %Integer [ InitialExpression = 100 ];
@@ -54,6 +58,9 @@ Property Repository As %String(MAXLEN = "");
 /// If the buffer is the service will retry to add incomming messages to the buffer for a specified period.
 Property RetryPeriodSeconds As %Integer [ InitialExpression = 10 ];
 
+/// REQUIRED<br>Set the language. The language is used to connect to the SAP system.
+Property SAPLanguage As %String [ Required ];
+
 /// REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.
 Property SystemNumber As %String [ Required ];
 
@@ -62,6 +69,9 @@ Property UseJSON As %Boolean [ InitialExpression = "false" ];
 
 /// REQUIRED<br>Set the username. The username is used to connect to the SAP system.
 Property Username As %String(MAXLEN=150) [ Required ];
+
+/// If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.
+Property XMLSchemaPath As %String(MAXLEN="");
 
 Method %remoteClassnameGet()
 {
@@ -81,12 +91,27 @@ Method SetPropertyValues()
 		$$$LOGWARNING(ex.DisplayString())
 	}
 	try {
+		set $property(..%gatewayProxy,"ImportXMLSchemas") = ..ImportXMLSchemas
+	} catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+	try {
+		set $property(..%gatewayProxy,"XMLSchemaPath") = ..XMLSchemaPath
+	} catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+	try {
 		set $property(..%gatewayProxy,"MaxBufferSize") = ..MaxBufferSize
 	} catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
 	try {
 		set $property(..%gatewayProxy,"RetryPeriodSeconds") = ..RetryPeriodSeconds
+	} catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+	try {
+		set $property(..%gatewayProxy,"EnableTesting") = ..EnableTesting
 	} catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}

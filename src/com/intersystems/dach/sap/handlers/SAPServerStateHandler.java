@@ -18,6 +18,6 @@ public interface SAPServerStateHandler {
      * @param oldState Old State of server
      * @param newState New state of server
      */
-    public void OnStateChanged(JCoServerState oldState, JCoServerState newState);
+    public void onStateChanged(JCoServerState oldState, JCoServerState newState);
 
 }

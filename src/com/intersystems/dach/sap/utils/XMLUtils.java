@@ -25,10 +25,10 @@ import org.xml.sax.SAXException;
  * @version 1.0
  * 
  */
-public final class SAPXML {
+public final class XMLUtils {
 
     // make this a static class
-    private SAPXML() {}
+    private XMLUtils() {}
 
     // XML namespace and header
     private static final String XMLNAMESPACE = "urn:isc:rfc";

@@ -32,10 +32,10 @@ import com.sap.conn.jco.JCoTable;
  * 
  */
 
-public final class SAPXSD {
+public final class XSDUtils {
 
     // Make this a static class
-    private SAPXSD() {}
+    private XSDUtils() {}
 
     private static Map<String, String> schemaCache = new Hashtable<String, String>();
 

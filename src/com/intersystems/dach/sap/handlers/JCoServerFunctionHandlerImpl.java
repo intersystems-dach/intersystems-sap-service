@@ -1,8 +1,8 @@
 package com.intersystems.dach.sap.handlers;
 
 import com.intersystems.dach.sap.SAPServerImportData;
-import com.intersystems.dach.sap.utils.SAPXML;
-import com.intersystems.dach.sap.utils.SAPXSD;
+import com.intersystems.dach.sap.utils.XMLUtils;
+import com.intersystems.dach.sap.utils.XSDUtils;
 import com.sap.conn.jco.AbapClassException;
 import com.sap.conn.jco.AbapException;
 import com.sap.conn.jco.JCoFunction;
@@ -47,8 +47,8 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
             data = function.getImportParameterList().toJSON();
         } else {
             try {
-                data = SAPXML.convert(function.getImportParameterList().toXML(), functionName);
-                schema = SAPXSD.createXSDString(function, true, false);
+                data = XMLUtils.convert(function.getImportParameterList().toXML(), functionName);
+                schema = XSDUtils.createXSDString(function, true, false);
             } catch (Exception e) {
                 throw new AbapClassException(e);
             }
@@ -56,9 +56,18 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
 
         // call the import data handler function
         SAPServerImportData importData = new SAPServerImportData(functionName, data, schema);
-        if (!importDataHandler.OnImportDataReceived(importData)) {
+        if (!importDataHandler.onImportDataReceived(importData)) {
             throw new AbapException("SYSTEM_FAILURE", "Could not process import parameters.");
         }
+
+        try {
+            synchronized(importData){
+                importData.wait(10000);
+            }
+        } catch (Exception e) {
+            throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
+        }
+
     }
 
 }
