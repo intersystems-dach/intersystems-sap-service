@@ -6,6 +6,13 @@ import com.sap.conn.jco.ext.DataProviderException;
 import com.sap.conn.jco.ext.DestinationDataEventListener;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 
+/**
+ * Destination Data provider implementation for SAP JCo.
+ * 
+ * @author Philipp Bonin, Andreas Schütz
+ * @version 1.0
+ * 
+ */
 public class DestinationDataProviderImpl implements DestinationDataProvider {
 
     /**

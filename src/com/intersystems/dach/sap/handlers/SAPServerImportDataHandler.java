@@ -1,6 +1,6 @@
 package com.intersystems.dach.sap.handlers;
 
-import com.intersystems.dach.sap.SAPServerImportData;
+import com.intersystems.dach.sap.SAPImportData;
 
 /**
  * A callback interface when server receives import data.
@@ -16,6 +16,6 @@ public interface SAPServerImportDataHandler {
      * @param args the SAPImportData
      * @return the result of the method
      */
-    void onImportDataReceived(SAPServerImportData data);
+    void onImportDataReceived(SAPImportData data);
 
 }

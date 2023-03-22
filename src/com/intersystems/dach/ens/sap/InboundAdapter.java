@@ -6,14 +6,15 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.intersystems.dach.ens.common.annotations.ClassMetadata;
-import com.intersystems.dach.ens.common.annotations.FieldMetadata;
-import com.intersystems.dach.ens.sap.testing.SAPServiceTestCase;
-import com.intersystems.dach.ens.sap.testing.SAPServiceTestRunner;
-import com.intersystems.dach.ens.sap.testing.TestCases;
+import com.intersystems.dach.ens.common.annotations.ClassMetadata; //intersystems-util-3.2.x or older
+import com.intersystems.dach.ens.common.annotations.FieldMetadata; //intersystems-util-3.2.x or older
+import com.intersystems.dach.ens.sap.testing.TestCase;
+import com.intersystems.dach.ens.sap.testing.TestRunner;
+import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
+import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
 import com.intersystems.dach.sap.SAPServer;
-import com.intersystems.dach.sap.SAPServerImportData;
+import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
@@ -21,18 +22,19 @@ import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
+import com.intersystems.jdbc.IRIS;
 import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
 /**
- * A Service to receive messages from a SAP system.
+ * A InboundAdapter to receive messages from a SAP system.
  * 
  * @author Philipp Bonin, Andreas Schütz
  * @version 1.0
  */
-@ClassMetadata(Description = "A InterSystems Business Service to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
-public class SAPService extends com.intersystems.enslib.pex.BusinessService
+@ClassMetadata(Description = "A InterSystems InboundAdapter to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
+public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         implements SAPServerImportDataHandler, SAPServerErrorHandler, SAPServerExceptionHandler {
 
     /**
@@ -40,10 +42,6 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
      * *** Service configuration ***
      * *****************************
      */
-
-    // SAP Service
-    @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "REQUIRED<br>Set the buisness partner in the production. The outgoing messages will be directed here.")
-    public String BusinessPartner = "";
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled the service will return a JSON object instead of a XML object")
     public boolean UseJSON = false;
@@ -54,7 +52,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     @FieldMetadata(Category = "SAP Service Settings", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
     public String XMLSchemaPath = "";
 
-    @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "REQUIRED<br>This is the maximum time the SAP function handler waits till the processing of the input data has been confirmed. If the confirmation takes longer an exception is thrown. The value should be at least twice (better three times) the Inbound Adapter Call Interval.")
+    @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.")
     public Integer ConfirmationTimeoutSec = 10;
 
     @FieldMetadata(Category = "SAP Service Settings", Description = "Send test messages for debugging and testing purposes.")
@@ -112,20 +110,22 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
      * ******************
      */
 
+    private IRIS iris;
     private SAPServer sapServer;
+    private IRISXSDSchemaImporter irisSchemaImporter;
 
-    private Queue<SAPServerImportData> importDataQueue;
+    private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
     private Queue<Exception> exceptionBuffer;
 
     private boolean warningActiveFlag = false;
 
-    private IRISXSDSchemaImporter irisSchemaImporter;
-
     @Override
     public void OnInit() throws Exception {
+        iris = GatewayContext.getIRIS();
+
         // Prepare buffers
-        importDataQueue = new ConcurrentLinkedQueue<SAPServerImportData>();
+        importDataQueue = new ConcurrentLinkedQueue<SAPImportData>();
         errorBuffer = new ConcurrentLinkedQueue<Error>();
         exceptionBuffer = new ConcurrentLinkedQueue<Exception>();
 
@@ -155,89 +155,69 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             LOGWARNING("Testing is enabled.");
             testing();
         }
-
     }
 
+    /**
+     * Initialize and start testing.
+     */
     private void testing() {
-        SAPServiceTestRunner testRunner = new SAPServiceTestRunner();
-        Collection<SAPServiceTestCase> testCases;
+        TestRunner testRunner = new TestRunner();
+        Collection<TestCase> testCases;
         if (this.UseJSON) {
-            testCases = TestCases.getJSONTestCases();
+            testCases = TestCaseCollection.getJSONTestCases();
             LOGINFO("Running " + testCases.size() + " JSON test cases.");
         } else {
-            testCases = TestCases.getXMLTestCases();
+            testCases = TestCaseCollection.getXMLTestCases();
             LOGINFO("Running " + testCases.size() + " XML test cases.");
         }
         testRunner.addTestCases(testCases);
-        testRunner.runTestsAsync(this);
+        testRunner.runTestsAsync(this, new TestStatusHandler() {
+            public void onTestStatus(String msg) {
+                LOGINFO("TESTING STATUS: " + msg);
+            }
+        });
     }
 
-    private boolean processImportData() {
+    @Override
+    public void OnTask() throws Exception {
         if (importDataQueue.isEmpty()) {
             // No data in queue, wait for next call intervall
-            _WaitForNextCallInterval = true;
+            BusinessHost.irisHandle.set("%WaitForNextCallInterval", true);
             // Reset warning flag
             warningActiveFlag = false;
-            return true;
+            return;
         }
-        
+
+        // Trigger high load warning
         if (!warningActiveFlag && importDataQueue.size() > 100) {
             LOGWARNING("High load. Current messages in Queue: " + importDataQueue.size());
             warningActiveFlag = true;
         }
 
-        _WaitForNextCallInterval = false;
-        boolean result = true;
-        SAPServerImportData importData = importDataQueue.poll();
-        IRISObject request;       
-        if (UseJSON) {
-            request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
-                    "Ens.StringRequest",
-                    "%New",
-                    importData.getData());
-        } else {
-            request = (IRISObject) GatewayContext.getIRIS().classMethodObject(
-                    "EnsLib.EDI.XML.Document",
-                    "%New",
-                    importData.getData());
-            request.set("DocType", importData.getFunctionName());
+        // Get import data from queue
+        SAPImportData importData = importDataQueue.poll();
 
-            if (ImportXMLSchemas && irisSchemaImporter != null) {
-                try {
-                    boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
-                            importData.getFunctionName(),
-                            importData.getSchema());
-                    if (importResult) {
-                        LOGINFO("Imported new XML schema: " + importData.getFunctionName());
-                    }
-                } catch (Exception e) {
-                    LOGERROR("Error while importing XML schema for function '" + 
-                        importData.getFunctionName() + "': " + e.getMessage());
+        // Import XML schemas
+        if (!importData.isJSON() && ImportXMLSchemas && irisSchemaImporter != null) {
+            try {
+                boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
+                        importData.getFunctionName(),
+                        importData.getSchema());
+                if (importResult) {
+                    LOGINFO("Imported new XML schema: " + importData.getFunctionName());
                 }
+            } catch (Exception e) {
+                LOGERROR("Error while importing XML schema for function '" + 
+                    importData.getFunctionName() + "': " + e.getMessage());
             }
         }
 
-        try {
-            this.SendRequestAsync(this.BusinessPartner, request);
-            synchronized(importData){
-                importData.notifyAll();
-            }
-        } catch (IllegalMonitorStateException e) {
-            LOGWARNING("Confirmation of import data processing failed.");
-        } catch (Exception e) {
-            LOGERROR("Error while sending request: " + e.getMessage());
-            result = false;
-        }
-
-        /* Wait for next call intervall if queue is empty or call
-           OnProcessInput immediately again. */
-        _WaitForNextCallInterval = importDataQueue.isEmpty();
-        return result;
-    }
-
-    @Override
-    public Object OnProcessInput(Object msg) throws Exception {        
-        boolean result = this.processImportData();
+        // Call ProcessInput
+        IRISObject irisObject = (IRISObject) iris.classMethodObject("com.intersystems.dach.ens.sap.SAPDataObject",
+                "%New", importData.getFunctionName(), importData.getData(), importData.getSchema(),
+                importData.isJSON());
+        BusinessHost.ProcessInput(irisObject);
+        importData.confirmProcessed(); // Data is now persistent in the Business process queue. 
 
         // Handle errors and exceptions
         boolean errorOrExceptionOccured = false;
@@ -257,9 +237,11 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
             throw new RuntimeException();
         }
 
-        return result;
-
+        /* Wait for next call intervall if queue is empty or call
+           OnProcessInput immediately again. */
+        BusinessHost.irisHandle.set("%WaitForNextCallInterval", importDataQueue.isEmpty());
     }
+
 
     @Override
     public void OnTearDown() throws Exception {
@@ -278,7 +260,7 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
     }
 
     @Override
-    public void onImportDataReceived(SAPServerImportData data) {
+    public void onImportDataReceived(SAPImportData data) {
         importDataQueue.add(data);
     }
 
@@ -292,12 +274,21 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         this.exceptionBuffer.add(e);
     }
 
-    // This is a workaround to handle a bug in IRIS < 2022.1
+    
+    /**
+     * // This is a workaround to handle a bug in IRIS < 2022.1
+     * @param hostObject
+     * @throws java.lang.Exception
+     */
     public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
         _dispatchOnInit(hostObject);
     }
 
-    // Helper method to generate SAP settings properties by using field annotations.
+    /**
+     * Helper method to generate SAP settings properties by using field annotations.
+     * @return Properties for SAP server settings.
+     * @throws Exception when a required field is missing.
+     */
     private Properties generateSettingsProperties() throws Exception {
         Properties properties = new Properties();
 
@@ -321,12 +312,5 @@ public class SAPService extends com.intersystems.enslib.pex.BusinessService
         return properties;
     }
 
-    
-    /**
-     * @return The name of the inbound adapter to be used with this class.
-     */
-    public String getAdapterType() {
-        return "com.intersystems.dach.ens.adapter.ManagedInboundAdapter";
-    }
 
 }

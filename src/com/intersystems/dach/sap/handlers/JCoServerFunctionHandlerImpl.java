@@ -1,6 +1,6 @@
 package com.intersystems.dach.sap.handlers;
 
-import com.intersystems.dach.sap.SAPServerImportData;
+import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
 import com.sap.conn.jco.AbapClassException;
@@ -58,11 +58,9 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
         }
         try {
             // call the import data handler function
-            SAPServerImportData importData = new SAPServerImportData(functionName, data, useJson, schema);
+            SAPImportData importData = new SAPImportData(functionName, data, useJson, schema);
             importDataHandler.onImportDataReceived(importData);
-            synchronized (importData) {
-                importData.wait(confirmationTimeoutMs);
-            }
+            importData.waitForConfirmation(confirmationTimeoutMs);
         } catch (InterruptedException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
         } catch (Exception e) {

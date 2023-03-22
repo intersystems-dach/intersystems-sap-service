@@ -137,36 +137,82 @@ public class SAPServer implements JCoServerErrorListener,
         jCoServer.start();
     }
 
+    /**
+     * Register an error handler.
+     * 
+     * @param errorHandler
+     * @return true, if registration was successful.
+     */
     public boolean registerErrorHandler(SAPServerErrorHandler errorHandler) {
         return errorHandlers.add(errorHandler);
     }
 
+    /**
+     * Unregister an error handler.
+     * 
+     * @param errorHandler
+     * @return true, if unregistration was successful.
+     */
     public boolean unregisterErrorHandler(SAPServerErrorHandler errorHandler) {
         return errorHandlers.remove(errorHandler);
     }
 
+    /**
+     * Register an exception handler.
+     * 
+     * @param exceptionHandler
+     * @return true, if registration was successful.
+     */
     public boolean registerExceptionHandler(SAPServerExceptionHandler exceptionHandler) {
         return exceptionHandlers.add(exceptionHandler);
     }
 
+    /**
+     * Unregister an exception handler.
+     * 
+     * @param exceptionHandler
+     * @return true, if unregistration was successful.
+     */
     public boolean unregisterExceptionHandler(SAPServerExceptionHandler exceptionHandler) {
         return exceptionHandlers.remove(exceptionHandler);
     }
 
+    /**
+     * Register a state handler.
+     * 
+     * @param stateHandler
+     * @return true, if registration was successful.
+     */
     public boolean registerStateHandler(SAPServerStateHandler stateHandler) {
         return stateHandlers.add(stateHandler);
     }
 
+     /**
+     * Unregister a state handler.
+     * 
+     * @param stateHandler
+     * @return true, if unregistration was successful.
+     */
     public boolean unregisterStateHandler(SAPServerStateHandler stateHandler) {
         return stateHandlers.remove(stateHandler);
     }
 
+    /**
+     * Check if SAP server is running.
+     * 
+     * @return true, if server is running, false, if not.
+     */
     public boolean isRunning() {
         if (jCoServer == null)
             return false;
         return jCoServer.getState().equals(JCoServerState.ALIVE);
     }
 
+    /**
+     * Stop the SAP server.
+     * 
+     * @throws Exception if server can't be stopped.
+     */
     public void stop() throws Exception {
         if (jCoServer != null) {
             jCoServer.stop();

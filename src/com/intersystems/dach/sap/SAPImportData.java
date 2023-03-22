@@ -7,7 +7,7 @@ package com.intersystems.dach.sap;
  * @version 1.0
  * 
  */
-public class SAPServerImportData {
+public class SAPImportData {
 
     private final String functionName;
 
@@ -23,7 +23,7 @@ public class SAPServerImportData {
      * @param data   - the data
      * @param schema - the schema
      */
-    public SAPServerImportData(String functionName, String data, boolean isJSON) {
+    public SAPImportData(String functionName, String data, boolean isJSON) {
         this(functionName, data, isJSON, null);
     }
 
@@ -33,7 +33,7 @@ public class SAPServerImportData {
      * @param data   - the data
      * @param schema - the schema
      */
-    public SAPServerImportData(String functionName, String data, boolean isJSON, String schema) {
+    public SAPImportData(String functionName, String data, boolean isJSON, String schema) {
         this.functionName = functionName;
         this.data = data;
         this.isJSON = isJSON;
@@ -69,10 +69,33 @@ public class SAPServerImportData {
 
     /**
      * Indicates if the data is in JSON format instead of XML.
+     * 
      * @return ture if data is in JSON format, false if in XML format.
      */
     public boolean isJSON() {
         return isJSON;
+    }
+
+    /**
+     * Causes current thread to wait till the processing of the data has been confirmed.
+     * 
+     * @param timeoutMs                     the timeout in milliseconds.
+     * @throws IllegalMonitorStateException if the current thread is not the owner of the object's monitor.
+     * @throws InterruptedException         if the timeout has expired.
+     */
+    public void waitForConfirmation(long timeoutMs) throws IllegalMonitorStateException, InterruptedException {
+        synchronized (this) {
+            this.wait(timeoutMs);
+        }
+    }
+
+    /**
+     * Confirm that the data has been processed. All waiting threads will be released.
+     */
+    public void confirmProcessed() {
+        synchronized(this) {
+            this.notifyAll();
+        }
     }
 
 }

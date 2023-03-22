@@ -1,15 +1,14 @@
-/// A InterSystems Business Service to receive messages from a SAP system.
-Class com.intersystems.dach.ens.bs.SAPService Extends EnsLib.PEX.BusinessService [ GeneratedBy = EnsLib.PEX.Utils ]
+/// A InterSystems InboundAdapter to receive messages from a SAP system.
+Class com.intersystems.dach.ens.sap.InboundAdapter Extends EnsLib.PEX.InboundAdapter [ GeneratedBy = EnsLib.PEX.Utils ]
 {
 
-Parameter ADAPTER = "com.intersystems.dach.ens.adapter.ManagedInboundAdapter";
+Property CallInterval As %Numeric(MINVAL = 0.1) [ InitialExpression = 0.1 ];
 
-Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.bs.SAPService";
-
-Parameter %URL = "https://github.com/phil1436/intersystems-sap-service";
+Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayTimeout,BusinessPartner:SAP Service Settings,UseJSON:SAP Service Settings,ImportXMLSchemas:SAP Service Settings,XMLSchemaPath:SAP Service Settings,ConfirmationTimeoutSec:SAP Service Settings,EnableTesting:SAP Service Settings,GatewayHost:SAP Server Connection,GatewayService:SAP Server Connection,ProgrammID:SAP Server Connection,ConnectionCount:SAP Server Connection,Repository:SAP Server Connection,HostAddress:SAP Client Connection,ClientID:SAP Client Connection,SystemNumber:SAP Client Connection,Username:SAP Client Connection,Password:SAP Client Connection,SAPLanguage:SAP Client Connection";
+
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,ImportXMLSchemas:Additional,XMLSchemaPath:Additional,UseJSON:SAP Server Settings,ConfirmationTimeoutSec:SAP Server Settings,EnableTesting:SAP Server Settings,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Server Settings,ClientID:SAP Server Settings,SystemNumber:SAP Server Settings,Username:SAP Server Settings,Password:SAP Server Settings,SAPLanguage:SAP Server Settings";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -21,14 +20,18 @@ Property %remoteClassname As %String [ Internal, ReadOnly ];
 
 Property %remoteLanguage As %String [ InitialExpression = "JAVA", Internal ];
 
+/// Use Host Connection. If set to true, this adapter will use the connection from the Business Host.
+/// If true, this supersedes the External Language Server this Adapter was registered with.
+Property %useHostConnection As %Boolean [ InitialExpression = 0, Internal ];
+
 /// REQUIRED<br>Set the buisness partner in the production. The outgoing messages will be directed here.
 Property BusinessPartner As %String(MAXLEN = "") [ Required ];
 
 /// REQUIRED<br>Set the client ID. The client ID is used to connect to the SAP system.
 Property ClientID As %String [ Required ];
 
-//"REQUIRED<br>This is the maximum time the SAP function handler waits till the processing of the input data has been confirmed. If the confirmation takes longer an exception is thrown. The value should be at least three times the Inbound Adapter Call Interval.
-Property ConfirmationTimeoutSec As %Integer(MINVAL=1, MAXVAL=600) [ InitialExpression = 10, Required ];
+/// "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.
+Property ConfirmationTimeoutSec As %Integer(MAXVAL = 600, MINVAL = 1) [ InitialExpression = 10, Required ];
 
 /// REQUIRED<br>Set the connection count. The connection count is used to connect to the SAP system.
 Property ConnectionCount As %Integer [ InitialExpression = 1, Required ];
@@ -67,10 +70,10 @@ Property SystemNumber As %String [ Required ];
 Property UseJSON As %Boolean [ InitialExpression = "false" ];
 
 /// REQUIRED<br>Set the username. The username is used to connect to the SAP system.
-Property Username As %String(MAXLEN=150) [ Required ];
+Property Username As %String(MAXLEN = 150) [ Required ];
 
 /// If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.
-Property XMLSchemaPath As %String(MAXLEN="");
+Property XMLSchemaPath As %String(MAXLEN = "");
 
 Method %remoteClassnameGet()
 {
@@ -79,11 +82,6 @@ Method %remoteClassnameGet()
 
 Method SetPropertyValues()
 {
-	try {
-		set $property(..%gatewayProxy,"BusinessPartner") = ..BusinessPartner
-	} catch ex {
-		$$$LOGWARNING(ex.DisplayString())
-	}
 	try {
 		set $property(..%gatewayProxy,"UseJSON") = ..UseJSON
 	} catch ex {

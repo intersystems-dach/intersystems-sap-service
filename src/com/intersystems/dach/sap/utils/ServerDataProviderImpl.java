@@ -6,6 +6,13 @@ import com.sap.conn.jco.ext.DataProviderException;
 import com.sap.conn.jco.ext.ServerDataEventListener;
 import com.sap.conn.jco.ext.ServerDataProvider;
 
+/**
+ * Server Data provider implementation for SAP JCo.
+ * 
+ * @author Philipp Bonin, Andreas Schütz
+ * @version 1.0
+ * 
+ */
 public class ServerDataProviderImpl implements ServerDataProvider{
     /**
      * From these properties all necessary destination
