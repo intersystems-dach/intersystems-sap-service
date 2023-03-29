@@ -93,6 +93,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.")
     public String SystemNumber = "";
 
+    // TODO use iris credentials
+
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_USER)
     @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the username. The username is used to connect to the SAP system.")
     public String Username = "";
@@ -129,6 +131,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         importDataQueue = new ConcurrentLinkedQueue<SAPImportData>();
         errorBuffer = new ConcurrentLinkedQueue<Error>();
         exceptionBuffer = new ConcurrentLinkedQueue<Exception>();
+
+        // TODO throw exception if(UseJSON && ImportXMLSchemas )
 
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
@@ -198,6 +202,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             return;
         }
 
+        // TODO add queue size (100) as config parameter
+
         // Trigger high load warning
         if (!warningActiveFlag && importDataQueue.size() > 100) {
             LOGWARNING("High load. Current messages in Queue: " + importDataQueue.size());
@@ -217,8 +223,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                     LOGINFO("Imported new XML schema: " + importData.getFunctionName());
                 }
             } catch (Exception e) {
-                LOGERROR("Error while importing XML schema for function '" + 
-                    importData.getFunctionName() + "': " + e.getMessage());
+                LOGERROR("Error while importing XML schema for function '" +
+                        importData.getFunctionName() + "': " + e.getMessage());
             }
         }
 
@@ -227,7 +233,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 "%New", importData.getFunctionName(), importData.getData(), importData.getSchema(),
                 importData.isJSON());
         BusinessHost.ProcessInput(irisObject);
-        importData.confirmProcessed(); // Data is now persistent in the Business process queue. 
+        importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
         // Handle errors and exceptions
         boolean errorOrExceptionOccured = false;
@@ -247,11 +253,12 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             throw new RuntimeException();
         }
 
-        /* Wait for next call intervall if queue is empty or call
-           OnProcessInput immediately again. */
+        /*
+         * Wait for next call intervall if queue is empty or call
+         * OnProcessInput immediately again.
+         */
         BusinessHost.irisHandle.set("%WaitForNextCallInterval", importDataQueue.isEmpty());
     }
-
 
     @Override
     public void OnTearDown() throws Exception {
@@ -284,9 +291,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         this.exceptionBuffer.add(e);
     }
 
-    
     /**
      * // This is a workaround to handle a bug in IRIS < 2022.1
+     * 
      * @param hostObject
      * @throws java.lang.Exception
      */
@@ -296,6 +303,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     /**
      * Helper method to generate SAP settings properties by using field annotations.
+     * 
      * @return Properties for SAP server settings.
      * @throws Exception when a required field is missing.
      */

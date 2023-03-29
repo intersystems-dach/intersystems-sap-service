@@ -15,6 +15,8 @@ import java.util.Collection;
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 
+// TODO make in objectscript
+
 public class IRISXSDSchemaImporter {
 
     private static final SimpleDateFormat directoryTimestampFormat = new SimpleDateFormat("yyyyMMdd_HHmm");
@@ -41,6 +43,8 @@ public class IRISXSDSchemaImporter {
 
         Path baseDirPath = Paths.get(xsdDirectoryBasePath);
         if (!Files.exists(baseDirPath)) {
+            // TODO only make directory when when xsd gets saved
+
             Files.createDirectories(baseDirPath);
         }
 
