@@ -28,7 +28,8 @@ import org.xml.sax.SAXException;
 public final class XMLUtils {
 
     // make this a static class
-    private XMLUtils() {}
+    private XMLUtils() {
+    }
 
     // XML namespace and header
     private static final String XMLNAMESPACE = "urn:isc:rfc";
@@ -102,6 +103,15 @@ public final class XMLUtils {
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
         String output = writer.getBuffer().toString();
         return output;
+    }
+
+    /**
+     * Get the XML namespace
+     * 
+     * @return XML namespace
+     */
+    public static String getXmlnamespace() {
+        return XMLNAMESPACE;
     }
 
 }
