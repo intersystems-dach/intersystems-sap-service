@@ -93,8 +93,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.")
     public String SystemNumber = "";
 
-    // TODO use iris credentials
-
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_USER)
     @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the username. The username is used to connect to the SAP system.")
     public String Username = "";
@@ -162,6 +160,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
             LOGERROR("SAPService could not be started: " + e.getMessage());
+            sapServer.unregisterDataProviders();
             throw new RuntimeException();
         }
 
@@ -292,7 +291,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     }
 
     /**
-     * // This is a workaround to handle a bug in IRIS < 2022.1
+     * This is a workaround to handle a bug in IRIS < 2022.1
      * 
      * @param hostObject
      * @throws java.lang.Exception

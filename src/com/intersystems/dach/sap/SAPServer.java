@@ -305,8 +305,7 @@ public class SAPServer implements JCoServerErrorListener,
             tracehandler.onTraceMSg("Unregistering data providers.");
         }
 
-        Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
-        Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
+        unregisterDataProviders();
 
         while (Environment.isServerDataProviderRegistered() ||
                 Environment.isDestinationDataProviderRegistered()) {
@@ -319,6 +318,16 @@ public class SAPServer implements JCoServerErrorListener,
         for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
             tracehandler.onTraceMSg("Data providers unregistered.");
         }
+    }
+
+    /**
+     * Unregister data providers.
+     */
+    public void unregisterDataProviders() {
+        if (SAPServer.serverDataProvider != null)
+            Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
+        if (SAPServer.destinationDataProvider != null)
+            Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
     }
 
     @Override
