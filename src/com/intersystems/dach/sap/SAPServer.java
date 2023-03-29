@@ -324,10 +324,16 @@ public class SAPServer implements JCoServerErrorListener,
      * Unregister data providers.
      */
     public void unregisterDataProviders() {
-        if (SAPServer.serverDataProvider != null)
+        if (SAPServer.serverDataProvider != null) {
             Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
-        if (SAPServer.destinationDataProvider != null)
+        }
+        if (SAPServer.destinationDataProvider != null) {
             Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
+        }
+
+        destinationDataProvider = null;
+        serverDataProvider = null;
+
     }
 
     @Override
