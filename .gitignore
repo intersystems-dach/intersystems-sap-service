@@ -83,3 +83,23 @@ nb-configuration.xml
 ## OS X
 ##############################
 .DS_Store
+
+lib/**
+bin/**
+out/**
+NOTES.md
+ideas.md
+**.txt
+.vscode/**
+sap.properties
+*.xml
+*.xsd
+.graphml/**
+loginExampleServer.png
+loginExampleClient.png
+**.jar
+src/ASPB/tests/**
+javadoc/**
+**.jcoDestination
+src/ASPB/pex/**
+src/ASPB/sap/old/**
