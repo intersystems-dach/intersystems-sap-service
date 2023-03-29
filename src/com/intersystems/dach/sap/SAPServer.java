@@ -3,12 +3,14 @@ package com.intersystems.dach.sap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.Map.Entry;
 
 import com.intersystems.dach.sap.handlers.JCoServerFunctionHandlerImpl;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
+import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
@@ -37,21 +39,23 @@ public class SAPServer implements JCoServerErrorListener,
         JCoServerExceptionListener,
         JCoServerStateChangedListener {
 
-    private SAPServerImportDataHandler importDataHandler;
-
-    private JCoServer jCoServer;
-
     private static DestinationDataProvider destinationDataProvider = null;
     private static ServerDataProvider serverDataProvider = null;
+
+    private JCoServer jCoServer;
 
     private boolean useJson;
 
     private int confirmationTimeoutMs = 20000;
 
+    private Properties settings;
+
     // Event handlers
+    private SAPServerImportDataHandler importDataHandler;
     private Collection<SAPServerErrorHandler> errorHandlers;
     private Collection<SAPServerExceptionHandler> exceptionHandlers;
     private Collection<SAPServerStateHandler> stateHandlers;
+    private Collection<SAPServerTraceMsgHandler> traceHandlers;
 
     /**
      * Initializes the server in XML mode.
@@ -59,13 +63,34 @@ public class SAPServer implements JCoServerErrorListener,
      * @param settings          SAP server settings.
      * @param importDataHandler Import data handler.
      */
-    public SAPServer(Properties settings, SAPServerImportDataHandler importDataHandler) {
-        this(settings, importDataHandler, false);
+    public SAPServer(Properties settings) {
+        this(settings, false);
+    }
+
+    /**
+     * Initializes the server.
+     * 
+     * @param settingsProvider  SAP server settings provider.
+     * @param importDataHandler Import data handler.
+     * @param useJson           Use JSON format instead of XML format.
+     */
+    public SAPServer(Properties settings, boolean useJson) {
+        // Create handler lists
+        this.errorHandlers = new ArrayList<SAPServerErrorHandler>();
+        this.exceptionHandlers = new ArrayList<SAPServerExceptionHandler>();
+        this.stateHandlers = new ArrayList<SAPServerStateHandler>();
+        this.traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
+
+        this.settings = settings;
+
+        this.jCoServer = null;
+        this.useJson = useJson;
     }
 
     /**
      * Set the confirmation timeout. This is the time the function handler waits
      * till the processing of the input data has been confirmed.
+     * 
      * @param confirmationTimeoutMs Must be at least 200 ms.
      */
     public boolean setConfirmationTimeoutMs(int confirmationTimeoutMs) {
@@ -78,50 +103,62 @@ public class SAPServer implements JCoServerErrorListener,
     }
 
     /**
-     * Initializes the server.
+     * Start SAP Server
      * 
-     * @param settingsProvider  SAP server settings provider.
-     * @param importDataHandler Import data handler.
-     * @param useJson           Use JSON format instead of XML format.
+     * @throws Exception if SAP server can't be started.
      */
-    public SAPServer(Properties settings, SAPServerImportDataHandler importDataHandler, boolean useJson) {
-        // Create handler lists
-        this.errorHandlers = new ArrayList<SAPServerErrorHandler>();
-        this.exceptionHandlers = new ArrayList<SAPServerExceptionHandler>();
-        this.stateHandlers = new ArrayList<SAPServerStateHandler>();
-
-        // Create data providers
-        if (SAPServer.destinationDataProvider == null) {
-            SAPServer.destinationDataProvider = new DestinationDataProviderImpl(settings);
-            Environment.registerDestinationDataProvider(SAPServer.destinationDataProvider);
-        }
-
-        if (SAPServer.serverDataProvider == null) {
-            SAPServer.serverDataProvider = new ServerDataProviderImpl(settings);
-            Environment.registerServerDataProvider(SAPServer.serverDataProvider);
-        }
-
-        this.jCoServer = null;
-        this.importDataHandler = importDataHandler;
-        this.useJson = useJson;
-    }
-
     public void start() throws Exception {
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Starting SAP server.");
+        }
+
+        // Pre checks
         if (importDataHandler == null) {
             throw new Exception("ImportDataHandler is null.");
         }
-
         if (isRunning()) {
             throw new Exception("Server is already running.");
         }
+        if (SAPServer.destinationDataProvider != null ||
+                SAPServer.serverDataProvider != null) {
+            throw new Exception("Data provider already registered.");
+        }
 
+        // Trace properties
+        if (!traceHandlers.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (Entry<Object, Object> e : settings.entrySet()) {
+                sb.append(e);
+            }
+            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+                tracehandler.onTraceMSg("Settings: " + sb.toString());
+            }
+        }
+
+        // Register data providers
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Registering data providers.");
+        }
+        SAPServer.destinationDataProvider = new DestinationDataProviderImpl(settings);
+        SAPServer.serverDataProvider = new ServerDataProviderImpl(settings);
+        Environment.registerDestinationDataProvider(SAPServer.destinationDataProvider);
+        Environment.registerServerDataProvider(SAPServer.serverDataProvider);
+
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Data providers registered.");
+        }
+
+        // Create jCoServer object
         this.jCoServer = JCoServerFactory
                 .getServer(serverDataProvider.getServerProperties("").getProperty(ServerDataProvider.JCO_PROGID));
 
         // Add generic Function handler
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Adding handlers and listeners.");
+        }
         DefaultServerHandlerFactory.FunctionHandlerFactory factory = new DefaultServerHandlerFactory.FunctionHandlerFactory();
         factory.registerGenericHandler(
-                new JCoServerFunctionHandlerImpl(importDataHandler, useJson, confirmationTimeoutMs));
+                new JCoServerFunctionHandlerImpl(importDataHandler, traceHandlers, useJson, confirmationTimeoutMs));
         jCoServer.setCallHandlerFactory(factory);
 
         // Add TID handler
@@ -133,8 +170,25 @@ public class SAPServer implements JCoServerErrorListener,
         jCoServer.addServerExceptionListener(this);
         jCoServer.addServerStateChangedListener(this);
 
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Handlers and listeners added.");
+        }
+
         // Start the server
         jCoServer.start();
+
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Server started.");
+        }
+    }
+
+    /**
+     * Register an import data handler (required).
+     * 
+     * @param importDataHandler the SAPServerImportDataHandler instance.
+     */
+    public void registerImportDataHandler(SAPServerImportDataHandler importDataHandler) {
+        this.importDataHandler = importDataHandler;
     }
 
     /**
@@ -187,7 +241,7 @@ public class SAPServer implements JCoServerErrorListener,
         return stateHandlers.add(stateHandler);
     }
 
-     /**
+    /**
      * Unregister a state handler.
      * 
      * @param stateHandler
@@ -195,6 +249,26 @@ public class SAPServer implements JCoServerErrorListener,
      */
     public boolean unregisterStateHandler(SAPServerStateHandler stateHandler) {
         return stateHandlers.remove(stateHandler);
+    }
+
+    /**
+     * Register a trace message handler.
+     * 
+     * @param traceMsgHandler
+     * @return true, if registration was successful.
+     */
+    public boolean registerTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
+        return traceHandlers.add(traceMsgHandler);
+    }
+
+    /**
+     * Unregister a trace message handler.
+     * 
+     * @param traceMsgHandler
+     * @return true, if unregistration was successful.
+     */
+    public boolean unregisterTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
+        return traceHandlers.remove(traceMsgHandler);
     }
 
     /**
@@ -214,6 +288,10 @@ public class SAPServer implements JCoServerErrorListener,
      * @throws Exception if server can't be stopped.
      */
     public void stop() throws Exception {
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Stopping SAP server.");
+        }
+
         if (jCoServer != null) {
             jCoServer.stop();
         }
@@ -222,11 +300,25 @@ public class SAPServer implements JCoServerErrorListener,
             Thread.sleep(1000);
         }
 
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("SAP server stopped.");
+            tracehandler.onTraceMSg("Unregistering data providers.");
+        }
+
         Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
         Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
 
+        while (Environment.isServerDataProviderRegistered() ||
+                Environment.isDestinationDataProviderRegistered()) {
+            Thread.sleep(1000);
+        }
+
         SAPServer.serverDataProvider = null;
         SAPServer.destinationDataProvider = null;
+
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Data providers unregistered.");
+        }
     }
 
     @Override

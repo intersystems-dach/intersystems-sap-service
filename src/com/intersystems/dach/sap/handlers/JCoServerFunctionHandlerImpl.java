@@ -1,5 +1,8 @@
 package com.intersystems.dach.sap.handlers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
@@ -24,6 +27,8 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
     // The callback function to call
     private final SAPServerImportDataHandler importDataHandler;
 
+    private Collection<SAPServerTraceMsgHandler> traceHandlers;
+
     private long confirmationTimeoutMs;
 
     /**
@@ -33,9 +38,16 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * @param callback The callback function to call
      */
     public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, 
+            Collection<SAPServerTraceMsgHandler> traceHandlers,
             boolean useJson, long confirmationTimeoutMs) {
         this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.importDataHandler = importDataHandler;
+        if (traceHandlers != null) {
+            this.traceHandlers = traceHandlers;
+        } else {
+            // Avoid null pointer exceptions
+            this.traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
+        }
         this.useJson = useJson;
     }
 
@@ -45,6 +57,10 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
         String functionName = function.getName();
         String data = null;
         String schema = null;
+
+        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+            tracehandler.onTraceMSg("Handle request by function '" + functionName + "'.");
+        }        
 
         if (useJson) {
             data = function.getImportParameterList().toJSON();
@@ -59,13 +75,24 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
         try {
             // call the import data handler function
             SAPImportData importData = new SAPImportData(functionName, data, useJson, schema);
+            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+                tracehandler.onTraceMSg("Calling import data receiver handler.");
+            }     
             importDataHandler.onImportDataReceived(importData);
+
+            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+                tracehandler.onTraceMSg("Waiting for confirmation.");
+            }
+
             importData.waitForConfirmation(confirmationTimeoutMs);
+
+            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
+                tracehandler.onTraceMSg("Confirmation received.");
+            }   
         } catch (InterruptedException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
         } catch (Exception e) {
             throw new AbapException("SYSTEM_FAILURE", "Could not process import parameters: " + e.getMessage());
         }
     }
-
 }

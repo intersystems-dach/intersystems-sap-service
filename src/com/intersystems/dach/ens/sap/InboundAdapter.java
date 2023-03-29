@@ -19,6 +19,7 @@ import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
+import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
@@ -140,10 +141,19 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Prepare SAP JCo server
         try {
             Properties settings = this.generateSettingsProperties();
-            sapServer = new SAPServer(settings, this, this.UseJSON);
+            sapServer = new SAPServer(settings, this.UseJSON);
+            sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
             sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
+            if (this.EnableTesting) {
+                sapServer.registerTraceMsgHandler(new SAPServerTraceMsgHandler() {
+                    @Override
+                    public void onTraceMSg(String traceMsg) {
+                        LOGINFO(traceMsg);
+                    }
+                });
+            }
             sapServer.start();
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
@@ -311,6 +321,4 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
         return properties;
     }
-
-
 }
