@@ -48,7 +48,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Service", Description = "If enabled the service will return a JSON object instead of a XML object")
     public boolean UseJSON = false;
 
-    @FieldMetadata(Category = "SAP Service", Description = "If enabled new XML schemas will be saved and imported to the production automatically.")
+    @FieldMetadata(Category = "SAP Service", Description = "If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.")
     public boolean ImportXMLSchemas = false;
 
     @FieldMetadata(Category = "SAP Service", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
@@ -61,7 +61,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     public boolean EnableTesting = false;
 
     @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
-    public int MaxQueueSize = 100;
+    public int QueueWarningThreshold = 100;
 
     // Server Connection
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWHOST)
@@ -134,8 +134,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         errorBuffer = new ConcurrentLinkedQueue<Error>();
         exceptionBuffer = new ConcurrentLinkedQueue<Exception>();
 
-        // TODO throw exception if(UseJSON && ImportXMLSchemas )
-
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
@@ -183,7 +181,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
 
         // Trigger high load warning
-        if (!warningActiveFlag && importDataQueue.size() > this.MaxQueueSize) {
+        if (!warningActiveFlag && importDataQueue.size() > this.QueueWarningThreshold) {
             LOGWARNING("High load. Current messages in Queue: " + importDataQueue.size());
             warningActiveFlag = true;
         }

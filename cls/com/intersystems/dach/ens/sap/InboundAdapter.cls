@@ -9,7 +9,7 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,MaxQueueSize:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -41,7 +41,7 @@ Property ConfirmationTimeoutSec As %Integer(MAXVAL = 600, MINVAL = 1) [ InitialE
 Property EnableTesting As %Boolean [ InitialExpression = 0 ];
 
 /// REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.
-Property MaxQueueSize As %Integer(MAXVAL = 10000, MINVAL = 1) [ InitialExpression = 100, Required ];
+Property QueueWarningThreshold As %Integer(MAXVAL = 10000, MINVAL = 1) [ InitialExpression = 100, Required ];
 
 //	*************************
 //	***SAP Server Settings***
@@ -85,7 +85,7 @@ Property SAPCredentials As %String;
 //	***XML***
 //	*********
 
-/// If enabled new XML schemas will be saved and imported to the production automatically.
+/// If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.
 Property ImportXMLSchemas As %Boolean [ InitialExpression = 0 ];
 
 /// If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.
@@ -183,7 +183,7 @@ Method SetPropertyValues()
 	}
 
 	Try {
-		Set $PROPERTY(..%gatewayProxy,"MaxQueueSize") = ..MaxQueueSize
+		Set $PROPERTY(..%gatewayProxy,"QueueWarningThreshold") = ..QueueWarningThreshold
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}

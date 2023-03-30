@@ -20,16 +20,34 @@ import com.intersystems.jdbc.IRIS;
 public class IRISXSDSchemaImporter {
 
     private static final SimpleDateFormat directoryTimestampFormat = new SimpleDateFormat("yyyyMMdd_HHmm");
-    private String xsdDirectoryBasePath;
     private Path xsdDirectoryPath = null;
     private Collection<String> knownSchemas = null;
     private boolean structureCreated;
 
     // make this class static
-    public IRISXSDSchemaImporter(String xsdDirectoryPath) {
-        this.xsdDirectoryBasePath = xsdDirectoryPath;
+    public IRISXSDSchemaImporter(String xsdDirectoryPath) throws IOException {
         this.knownSchemas = new ArrayList<String>();
         this.structureCreated = false;
+
+        Path baseDirPath = Paths.get(xsdDirectoryPath);
+        if (!Files.exists(baseDirPath)) {
+            Files.createDirectories(baseDirPath);
+        } else if (!Files.isWritable(baseDirPath)) {
+            throw new IOException("Path is not a writeable: " + baseDirPath);
+        }
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String folderNamePrefix = directoryTimestampFormat.format(timestamp);
+        String folderNameSuffix = "";
+        long index = 1;
+        Path xsdPath;
+
+        do {
+            xsdPath = Paths.get(baseDirPath.toString(), folderNamePrefix + folderNameSuffix);
+            folderNameSuffix = "_" + index;
+            index++;
+        } while (Files.exists(xsdPath));
+        this.xsdDirectoryPath = xsdPath;
     }
 
     /**
@@ -45,24 +63,7 @@ public class IRISXSDSchemaImporter {
             return null;
         }
 
-        Path baseDirPath = Paths.get(xsdDirectoryBasePath);
-        if (!Files.exists(baseDirPath)) {
-            Files.createDirectories(baseDirPath);
-        }
-
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String folderNamePrefix = directoryTimestampFormat.format(timestamp);
-        String folderNameSuffix = "";
-        long index = 1;
-        Path xsdPath;
-
-        do {
-            xsdPath = Paths.get(baseDirPath.toString(), folderNamePrefix + folderNameSuffix);
-            folderNameSuffix = "_" + index;
-            index++;
-        } while (Files.exists(xsdPath));
-
-        this.xsdDirectoryPath = Files.createDirectory(xsdPath);
+        Files.createDirectory(xsdDirectoryPath);
         this.structureCreated = true;
         return this.xsdDirectoryPath.toString();
     }

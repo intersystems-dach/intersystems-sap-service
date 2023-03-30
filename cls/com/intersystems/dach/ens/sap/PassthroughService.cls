@@ -17,19 +17,15 @@ Method OnProcessInput(pInput As com.intersystems.dach.ens.sap.SAPDataObject, pOu
 
    If (pInput.IsJson) {
       Set pRequest = ##class(Ens.StringRequest).%New(pInput.Data)
-   } else {
+   } Else {
       // Data is XML
       Set tStream = ##class(%Stream.TmpCharacter).%New()
       Set tSC = tStream.Write(pInput.Data)
-      $$$ThrowOnError(tSC)
+      Quit:$$$ISERR(tSC) tSC
       Kill %objlasterror
-      set pRequest = ##class(EnsLib.EDI.XML.Document).%New(tStream)
-<<<<<<< HEAD
-      set:'$ISOBJECT(pRequest) tSC = $$$ERROR("ErrGeneral", "Failed to generate XML document: "_$$getAllErrorTexts^EnsUtil(%objlasterror))
-=======
-      set:'$ISOBJECT(pRequest) tSC = $$$ERROR($$$EnsErrGeneral, "Failed to generate XML document: "_$$$StatusDisplayString(%objlasterror))
->>>>>>> 6f3dbd90044a78c364bc93e4404bf9049427ccaf
-      $$$ThrowOnError(tSC)
+      Set pRequest = ##class(EnsLib.EDI.XML.Document).%New(tStream)
+      Set:'$ISOBJECT(pRequest) tSC = $$$ERROR($$$EnsErrGeneral, "Failed to generate XML document: "_$$$StatusDisplayString(%objlasterror))
+      Quit:$$$ISERR(tSC) tSC
    }
    
    For iTarget=1:1:$L(..TargetConfigNames, ",") {
