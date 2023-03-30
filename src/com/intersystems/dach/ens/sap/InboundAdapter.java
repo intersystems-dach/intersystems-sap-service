@@ -136,8 +136,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
             irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
-            String xsdDir = irisSchemaImporter.initialize();
-            LOGINFO("Created XML schema folder: " + xsdDir);
         }
 
         // Prepare SAP JCo server
@@ -170,27 +168,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
     }
 
-    /**
-     * Initialize and start testing.
-     */
-    private void testing() {
-        TestRunner testRunner = new TestRunner();
-        Collection<TestCase> testCases;
-        if (this.UseJSON) {
-            testCases = TestCaseCollection.getJSONTestCases();
-            LOGINFO("Running " + testCases.size() + " JSON test cases.");
-        } else {
-            testCases = TestCaseCollection.getXMLTestCases();
-            LOGINFO("Running " + testCases.size() + " XML test cases.");
-        }
-        testRunner.addTestCases(testCases);
-        testRunner.runTestsAsync(this, new TestStatusHandler() {
-            public void onTestStatus(String msg) {
-                LOGINFO("TESTING STATUS: " + msg);
-            }
-        });
-    }
-
     @Override
     public void OnTask() throws Exception {
         if (importDataQueue.isEmpty()) {
@@ -214,6 +191,13 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         // Import XML schemas
         if (!importData.isJSON() && ImportXMLSchemas && irisSchemaImporter != null) {
+            // create dir structure
+            String xsdDir = irisSchemaImporter.createStructureIfNotExists();
+            if (xsdDir != null) {
+                LOGINFO("Created XML schema folder: " + xsdDir);
+            }
+
+            // import xsd
             try {
                 boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
                         importData.getFunctionName(),
@@ -273,6 +257,27 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         // Reset iris XML schema importer
         this.irisSchemaImporter = null;
+    }
+
+    /**
+     * Initialize and start testing.
+     */
+    private void testing() {
+        TestRunner testRunner = new TestRunner();
+        Collection<TestCase> testCases;
+        if (this.UseJSON) {
+            testCases = TestCaseCollection.getJSONTestCases();
+            LOGINFO("Running " + testCases.size() + " JSON test cases.");
+        } else {
+            testCases = TestCaseCollection.getXMLTestCases();
+            LOGINFO("Running " + testCases.size() + " XML test cases.");
+        }
+        testRunner.addTestCases(testCases);
+        testRunner.runTestsAsync(this, new TestStatusHandler() {
+            public void onTestStatus(String msg) {
+                LOGINFO("TESTING STATUS: " + msg);
+            }
+        });
     }
 
     @Override

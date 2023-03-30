@@ -23,28 +23,30 @@ public class IRISXSDSchemaImporter {
     private String xsdDirectoryBasePath;
     private Path xsdDirectoryPath = null;
     private Collection<String> knownSchemas = null;
+    private boolean structureCreated;
 
     // make this class static
     public IRISXSDSchemaImporter(String xsdDirectoryPath) {
         this.xsdDirectoryBasePath = xsdDirectoryPath;
+        this.knownSchemas = new ArrayList<String>();
+        this.structureCreated = false;
     }
 
     /**
-     * Creates a directory to store the XSD files.
-     * The directory base path specified as a class member.
-     * Additonally a directory with the current timestamp as
-     * name is created. If this directory already exists a
-     * suffix with a consecutive number will be appended.
+     * Creates the directory structure for the XSD schemas if it does not exist yet.
      * 
-     * @return Returns the path of the XSD directory.
-     * 
+     * @return The path of the created directory or null if the directory already
+     *         exists.
+     * @throws IOException
+     * @throws InvalidPathException
      */
-    public String initialize() throws InvalidPathException, IOException {
+    public String createStructureIfNotExists() throws IOException, InvalidPathException {
+        if (this.structureCreated) {
+            return null;
+        }
 
         Path baseDirPath = Paths.get(xsdDirectoryBasePath);
         if (!Files.exists(baseDirPath)) {
-            // TODO only make directory when when xsd gets saved
-
             Files.createDirectories(baseDirPath);
         }
 
@@ -61,8 +63,7 @@ public class IRISXSDSchemaImporter {
         } while (Files.exists(xsdPath));
 
         this.xsdDirectoryPath = Files.createDirectory(xsdPath);
-        this.knownSchemas = new ArrayList<String>();
-
+        this.structureCreated = true;
         return this.xsdDirectoryPath.toString();
     }
 

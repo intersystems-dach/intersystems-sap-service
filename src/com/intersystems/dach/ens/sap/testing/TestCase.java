@@ -31,5 +31,5 @@ public class TestCase {
     public long getWaitTimeMs() {
         return waitTimeMs;
     }
-    
+
 }
