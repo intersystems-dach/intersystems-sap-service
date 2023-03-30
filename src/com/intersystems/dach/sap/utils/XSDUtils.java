@@ -21,6 +21,7 @@ import java.util.Map;
 import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.JCoMetaData;
 import com.sap.conn.jco.JCoParameterList;
+import com.sap.conn.jco.JCoRecord;
 import com.sap.conn.jco.JCoStructure;
 import com.sap.conn.jco.JCoTable;
 
@@ -114,7 +115,7 @@ public final class XSDUtils {
         JCoMetaData metadata = parameterList.getMetaData();
 
         for (int i = 0; i < metadata.getFieldCount(); i++) {
-            sequence.appendChild(convertElement(i, metadata, doc, parameterList));
+            sequence.appendChild(convertElement(i, metadata, doc, parameterList, null));
         }
 
         return doc;
@@ -138,7 +139,7 @@ public final class XSDUtils {
 
         JCoMetaData structMetadata = structure.getMetaData();
         for (int i = 0; i < structMetadata.getFieldCount(); i++) {
-            root.appendChild(convertElement(i, structMetadata, doc, parameterList));
+            root.appendChild(convertElement(i, structMetadata, doc, parameterList, structure));
         }
     }
 
@@ -158,9 +159,9 @@ public final class XSDUtils {
         root.appendChild(sequence);
         root = sequence;
 
-        JCoMetaData structMetadata = table.getMetaData();
-        for (int i = 0; i < structMetadata.getFieldCount(); i++) {
-            root.appendChild(convertElement(i, structMetadata, doc, parameterList));
+        JCoMetaData tableMetadata = table.getMetaData();
+        for (int i = 0; i < tableMetadata.getFieldCount(); i++) {
+            root.appendChild(convertElement(i, tableMetadata, doc, parameterList, table));
         }
     }
 
@@ -173,7 +174,8 @@ public final class XSDUtils {
      * @param parameterList The parameter list of the JCoFunction
      * @return The XSD element
      */
-    private static Element convertElement(int i, JCoMetaData metadata, Document doc, JCoParameterList parameterList) {
+    private static Element convertElement(int i, JCoMetaData metadata, Document doc, JCoParameterList parameterList,
+            JCoRecord parent) {
         String name = metadata.getName(i).replace("/", "_-");
 
         Element element;
@@ -241,7 +243,10 @@ public final class XSDUtils {
                 element.setAttribute("minOccurs", "0");
 
                 Element complexTypeStruct = doc.createElement("xs:complexType");
-                convertStructure(parameterList.getStructure(name), complexTypeStruct, doc, parameterList);
+
+                JCoStructure struct = parent == null ? parameterList.getStructure(name) : parent.getStructure(name);
+                convertStructure(struct, complexTypeStruct, doc, parameterList);
+
                 element.appendChild(complexTypeStruct);
                 break;
             case JCoMetaData.TYPE_TABLE:
@@ -251,7 +256,10 @@ public final class XSDUtils {
                 element.setAttribute("minOccurs", "0");
 
                 Element complexTypeTable = doc.createElement("xs:complexType");
-                convertTable(parameterList.getTable(name), complexTypeTable, doc, parameterList);
+
+                JCoTable table = parent == null ? parameterList.getTable(name) : parent.getTable(name);
+                convertTable(table, complexTypeTable, doc, parameterList);
+
                 element.appendChild(complexTypeTable);
                 break;
             default:
