@@ -44,65 +44,69 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
      * *****************************
      */
 
-    @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled the service will return a JSON object instead of a XML object")
+    // SAP Service
+    @FieldMetadata(Category = "SAP Service", Description = "If enabled the service will return a JSON object instead of a XML object")
     public boolean UseJSON = false;
 
-    @FieldMetadata(Category = "SAP Service Settings", Description = "If enabled new XML schemas will be saved and imported to the production automatically.")
+    @FieldMetadata(Category = "SAP Service", Description = "If enabled new XML schemas will be saved and imported to the production automatically.")
     public boolean ImportXMLSchemas = false;
 
-    @FieldMetadata(Category = "SAP Service Settings", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
+    @FieldMetadata(Category = "SAP Service", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
     public String XMLSchemaPath = "";
 
-    @FieldMetadata(Category = "SAP Service Settings", IsRequired = true, Description = "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.")
+    @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.")
     public Integer ConfirmationTimeoutSec = 10;
 
-    @FieldMetadata(Category = "SAP Service Settings", Description = "Send test messages for debugging and testing purposes.")
+    @FieldMetadata(Category = "SAP Service", Description = "Send test messages for debugging and testing purposes.")
     public boolean EnableTesting = false;
+
+    @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
+    public int MaxQueueSize = 100;
 
     // Server Connection
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWHOST)
-    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.")
     public String GatewayHost = "";
 
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWSERV)
-    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number.")
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "REQUIRED<br>Set the gateway service. The gateway service is used to connect to the SAP system. Usually 'sapgwNN' whereas NN is the instance number.")
     public String GatewayService = "";
 
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_PROGID)
-    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the programm ID. The programm ID is used to identify the service in the SAP system.")
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "REQUIRED<br>Set the programm ID. The programm ID is used to identify the service in the SAP system.")
     public String ProgrammID = "";
 
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_CONNECTION_COUNT)
-    @FieldMetadata(Category = "SAP Server Connection", IsRequired = true, Description = "REQUIRED<br>Set the connection count. The connection count is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "REQUIRED<br>Set the connection count. The connection count is used to connect to the SAP system.")
     public int ConnectionCount = 1;
 
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_REP_DEST)
-    @FieldMetadata(Category = "SAP Server Connection", Description = "Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST")
+    @FieldMetadata(Category = "SAP Server Settings", Description = "Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST")
     public String Repository = "";
 
     // Client Connection
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_ASHOST)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.")
     public String HostAddress = "";
 
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_CLIENT)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the client ID. The client ID is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the client ID. The client ID is used to connect to the SAP system.")
     public String ClientID = "";
 
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SYSNR)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.")
     public String SystemNumber = "";
 
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_USER)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the username. The username is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the username. The username is used to connect to the SAP system.")
     public String Username = "";
 
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_PASSWD)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the password. The password is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the password. The password is used to connect to the SAP system.")
     public String Password = "";
 
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_LANG)
-    @FieldMetadata(Category = "SAP Client Connection", IsRequired = true, Description = "REQUIRED<br>Set the language. The language is used to connect to the SAP system.")
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the language. The language is used to connect to the SAP system.")
     public String SAPLanguage = "";
 
     /**
@@ -178,10 +182,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             return;
         }
 
-        // TODO add queue size (100) as config parameter
-
         // Trigger high load warning
-        if (!warningActiveFlag && importDataQueue.size() > 100) {
+        if (!warningActiveFlag && importDataQueue.size() > this.MaxQueueSize) {
             LOGWARNING("High load. Current messages in Queue: " + importDataQueue.size());
             warningActiveFlag = true;
         }

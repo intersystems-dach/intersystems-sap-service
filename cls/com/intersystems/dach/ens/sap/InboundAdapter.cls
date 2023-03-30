@@ -9,7 +9,7 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,MaxQueueSize:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -17,8 +17,10 @@ Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "
 /// External Language Server Name
 Property %gatewayName As %String [ InitialExpression = "%Java Server", Internal ];
 
+/// The remote class name of the adapter
 Property %remoteClassname As %String [ Internal, ReadOnly ];
 
+/// The remote external language
 Property %remoteLanguage As %String [ InitialExpression = "JAVA", Internal ];
 
 /// Use Host Connection. If set to true, this adapter will use the connection from the Business Host.
@@ -32,11 +34,14 @@ Property %useHostConnection As %Boolean [ InitialExpression = 0, Internal ];
 /// If enabled the service will return a JSON object instead of a XML object
 Property UseJSON As %Boolean [ InitialExpression = "false" ];
 
-/// "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.
+/// REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.
 Property ConfirmationTimeoutSec As %Integer(MAXVAL = 600, MINVAL = 1) [ InitialExpression = 10, Required ];
 
 /// Send test messages for debugging and testing purposes.
 Property EnableTesting As %Boolean [ InitialExpression = 0 ];
+
+/// REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.
+Property MaxQueueSize As %Integer(MAXVAL = 10000, MINVAL = 1) [ InitialExpression = 100, Required ];
 
 //	*************************
 //	***SAP Server Settings***
@@ -98,61 +103,73 @@ Method SetPropertyValues()
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"ImportXMLSchemas") = ..ImportXMLSchemas
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"XMLSchemaPath") = ..XMLSchemaPath
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"ConfirmationTimeoutSec") = ..ConfirmationTimeoutSec
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"EnableTesting") = ..EnableTesting
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"GatewayHost") = ..GatewayHost
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"GatewayService") = ..GatewayService
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"ProgrammID") = ..ProgrammID
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"ConnectionCount") = ..ConnectionCount
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"Repository") = ..Repository
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"HostAddress") = ..HostAddress
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"ClientID") = ..ClientID
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
+
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"SystemNumber") = ..SystemNumber
 	} Catch ex {
@@ -161,6 +178,12 @@ Method SetPropertyValues()
 	
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"SAPLanguage") = ..SAPLanguage
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"MaxQueueSize") = ..MaxQueueSize
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
