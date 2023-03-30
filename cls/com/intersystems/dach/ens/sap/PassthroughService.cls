@@ -1,3 +1,4 @@
+/// v1.0
 /// A InterSystems InboundAdapter to receive messages from a SAP system.
 Class com.intersystems.dach.ens.sap.PassthroughService Extends Ens.BusinessService
 {
@@ -14,18 +15,18 @@ Method OnProcessInput(pInput As com.intersystems.dach.ens.sap.SAPDataObject, pOu
    #dim tSC As %Status = $$$OK 
    #dim pRequest As Ens.Request
 
-   if (pInput.IsJson) {
+   If (pInput.IsJson) {
       Set pRequest = ##class(Ens.StringRequest).%New(pInput.Data)
-   } else {
+   } Else {
       Set pRequest = ##class(EnsLib.EDI.XML.Document).%New(pInput.Data)
       Set pRequest.DocType = pInput.FunctionName
    }
    
    For iTarget=1:1:$L(..TargetConfigNames, ",") {
-      Set tOneTarget=$ZStrip($P(..TargetConfigNames,",",iTarget),"<>W")
+      Set tOneTarget=$ZSTRIP($P(..TargetConfigNames,",",iTarget),"<>W")
       Continue:""=tOneTarget
       $$$sysTRACE("Sending message to '"_tOneTarget_"'")
-      set tSC = ..SendRequestAsync(tOneTarget, pRequest)
+      Set tSC = ..SendRequestAsync(tOneTarget, pRequest)
    }
 
    Quit tSC
@@ -36,7 +37,7 @@ ClassMethod OnGetConnections(Output pArray As %String, pItem As Ens.Config.Item)
 {
 	Do ##super(.pArray,pItem)
 	If pItem.GetModifiedSetting("TargetConfigNames",.tValue) {
-		For i=1:1:$L(tValue,",") { Set tOne=$ZStrip($P(tValue,",",i),"<>W")  Continue:""=tOne  Set pArray(tOne)="" }
+		For i=1:1:$L(tValue,",") { Set tOne=$ZSTRIP($P(tValue,",",i),"<>W")  Continue:""=tOne  Set pArray(tOne)="" }
 	}
 }
 
