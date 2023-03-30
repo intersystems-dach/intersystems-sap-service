@@ -114,6 +114,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 -   `UseJSON` _boolean_ - If enabled, the service will convert the SAP data to JSON. _(default: false)_
 -   `ConfirmationTimeoutSec` _integer, required_ - The time in seconds the service will wait for a confirmation for a message to be processed. _(default: 10)_
 -   `EnableTesting` _boolean_ - If enabled, the service will start with some test data and will log more to the log. _(default: false)_
+-   `MaxQueueSize` _integer, required_ - The maximum number of messages that can be queued. _(default: 100)_
 
 ### SAP Server Settings
 

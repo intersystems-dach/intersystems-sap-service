@@ -24,7 +24,11 @@ Method OnProcessInput(pInput As com.intersystems.dach.ens.sap.SAPDataObject, pOu
       $$$ThrowOnError(tSC)
       Kill %objlasterror
       set pRequest = ##class(EnsLib.EDI.XML.Document).%New(tStream)
+<<<<<<< HEAD
       set:'$ISOBJECT(pRequest) tSC = $$$ERROR("ErrGeneral", "Failed to generate XML document: "_$$getAllErrorTexts^EnsUtil(%objlasterror))
+=======
+      set:'$ISOBJECT(pRequest) tSC = $$$ERROR($$$EnsErrGeneral, "Failed to generate XML document: "_$$$StatusDisplayString(%objlasterror))
+>>>>>>> 6f3dbd90044a78c364bc93e4404bf9049427ccaf
       $$$ThrowOnError(tSC)
    }
    
