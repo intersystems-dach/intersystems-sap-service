@@ -131,7 +131,6 @@ public final class XSDUtils {
      */
     private static void convertStructure(JCoStructure structure, Element root, Document doc,
             JCoParameterList parameterList) {
-
         // add sequence
         Element sequence = doc.createElement("xs:sequence");
         root.appendChild(sequence);
@@ -157,6 +156,11 @@ public final class XSDUtils {
         // add sequence
         Element sequence = doc.createElement("xs:sequence");
         root.appendChild(sequence);
+
+        if (table.isEmpty()) {
+            return;
+        }
+
         root = sequence;
 
         JCoMetaData tableMetadata = table.getMetaData();

@@ -9,12 +9,11 @@ package com.intersystems.dach.sap.handlers;
  */
 
 public interface SAPServerTraceMsgHandler {
+
     /**
-     * SAPServerStateHandler callback method
-     * Defined states are: STARTED, DEAD, ALIVE, STOPPED;
+     * This method is called when the server sends a status message.
      * 
-     * @param oldState Old State of server
-     * @param newState New state of server
+     * @param traceMsg The status message.
      */
     public void onTraceMSg(String traceMsg);
 
