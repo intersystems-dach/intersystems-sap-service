@@ -3,6 +3,8 @@ package com.intersystems.dach.sap.handlers;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.naming.TimeLimitExceededException;
+
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
@@ -37,7 +39,7 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * 
      * @param callback The callback function to call
      */
-    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, 
+    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler,
             Collection<SAPServerTraceMsgHandler> traceHandlers,
             boolean useJson, long confirmationTimeoutMs) {
         this.confirmationTimeoutMs = confirmationTimeoutMs;
@@ -60,7 +62,7 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
 
         for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
             tracehandler.onTraceMSg("Handle request by function '" + functionName + "'.");
-        }        
+        }
 
         if (useJson) {
             data = function.getImportParameterList().toJSON();
@@ -77,7 +79,7 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
             SAPImportData importData = new SAPImportData(functionName, data, useJson, schema);
             for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
                 tracehandler.onTraceMSg("Calling import data receiver handler.");
-            }     
+            }
             importDataHandler.onImportDataReceived(importData);
 
             for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
@@ -88,8 +90,8 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
 
             for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
                 tracehandler.onTraceMSg("Confirmation received.");
-            }   
-        } catch (InterruptedException e) {
+            }
+        } catch (TimeLimitExceededException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
         } catch (Exception e) {
             throw new AbapException("SYSTEM_FAILURE", "Could not process import parameters: " + e.getMessage());

@@ -1,5 +1,7 @@
 package com.intersystems.dach.sap;
 
+import javax.naming.TimeLimitExceededException;
+
 /**
  * A class that represents SAP Import Data
  * 
@@ -16,6 +18,8 @@ public class SAPImportData {
     private final String schema;
 
     private final boolean isJSON;
+
+    private boolean confirmed;
 
     /**
      * Create a new SAPImportData object without schema
@@ -77,24 +81,31 @@ public class SAPImportData {
     }
 
     /**
-     * Causes current thread to wait till the processing of the data has been confirmed.
+     * Causes current thread to wait till the processing of the data has been
+     * confirmed.
      * 
-     * @param timeoutMs                     the timeout in milliseconds.
-     * @throws IllegalMonitorStateException if the current thread is not the owner of the object's monitor.
-     * @throws InterruptedException         if the timeout has expired.
+     * @param timeoutMs the timeout in milliseconds.
+     * @throws TimeLimitExceededException
+     * @throws InterruptedException
      */
-    public void waitForConfirmation(long timeoutMs) throws IllegalMonitorStateException, InterruptedException {
+    public void waitForConfirmation(long timeoutMs) throws TimeLimitExceededException, InterruptedException {
+        confirmed = false;
         synchronized (this) {
             this.wait(timeoutMs);
+        }
+        if (!confirmed) {
+            throw new TimeLimitExceededException("Confirmation timeout " + timeoutMs + " expired");
         }
     }
 
     /**
-     * Confirm that the data has been processed. All waiting threads will be released.
+     * Confirm that the data has been processed. All waiting threads will be
+     * released.
      */
     public void confirmProcessed() {
-        synchronized(this) {
-            this.notifyAll();
+        confirmed = true;
+        synchronized (this) {
+            this.notify();
         }
     }
 
