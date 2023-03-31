@@ -86,7 +86,6 @@ public final class XSDUtils {
     public static Document createXSDDocument(JCoFunction function, boolean isImportParameter)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
-        final String namespace = "xmlns:xs";
         // create the XSD document
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         Document doc = dbf.newDocumentBuilder().newDocument();
@@ -94,11 +93,31 @@ public final class XSDUtils {
         // create the schema element
         Element schema = doc.createElementNS(XMLConstants.W3C_XML_SCHEMA_NS_URI,
                 "xs:schema");
-        schema.setAttribute(namespace, XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        schema.setAttribute("xmlns:xs", XMLConstants.W3C_XML_SCHEMA_NS_URI);
         schema.setAttribute("attributeFormDefault", "unqualified");
         schema.setAttribute("elementFormDefault", "qualified");
         schema.setAttribute("targetNamespace", XMLUtils.getXmlnamespace());
+        schema.setAttribute("xmlns:tns", XMLUtils.getXmlnamespace());
         doc.appendChild(schema);
+
+        // create nullDate type
+        Element nullDateType = doc.createElement("xs:simpleType");
+        nullDateType.setAttribute("name", "nullDate");
+        schema.appendChild(nullDateType);
+        Element restriction = doc.createElement("xs:restriction");
+        restriction.setAttribute("base", "xs:string");
+        nullDateType.appendChild(restriction);
+        Element enumeration = doc.createElement("xs:enumeration");
+        enumeration.setAttribute("value", "0000-00-00");
+        restriction.appendChild(enumeration);
+
+        // create dateOrNullDate type
+        Element dateOrNullDateType = doc.createElement("xs:simpleType");
+        dateOrNullDateType.setAttribute("name", "dateOrNullDate");
+        schema.appendChild(dateOrNullDateType);
+        Element union = doc.createElement("xs:union");
+        union.setAttribute("memberTypes", "xs:date tns:nullDate");
+        dateOrNullDateType.appendChild(union);
 
         // create the root element
         Element functionName = doc.createElement("xs:element");
@@ -216,8 +235,7 @@ public final class XSDUtils {
                 break;
             case JCoMetaData.TYPE_DATE:
                 element = doc.createElement("xs:element");
-                // TODO use better type to include 0000-00-00
-                element.setAttribute("type", "xs:string");
+                element.setAttribute("type", "tns:dateOrNullDate");
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
