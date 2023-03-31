@@ -157,11 +157,26 @@ public final class XSDUtils {
         Element sequence = doc.createElement("xs:sequence");
         root.appendChild(sequence);
 
+        // add item element
+        Element itemElement = doc.createElement("xs:element");
+        itemElement.setAttribute("name", "item");
+        itemElement.setAttribute("maxOccurs", "unbounded");
+        itemElement.setAttribute("minOccurs", "0");
+        sequence.appendChild(itemElement);
+
+        // complex type for item element
+        Element complexTypeItem = doc.createElement("xs:complexType");
+        itemElement.appendChild(complexTypeItem);
+
+        // sequence for item element
+        Element sequenceItem = doc.createElement("xs:sequence");
+        complexTypeItem.appendChild(sequenceItem);
+
         if (table.isEmpty()) {
             return;
         }
 
-        root = sequence;
+        root = sequenceItem;
 
         JCoMetaData tableMetadata = table.getMetaData();
         for (int i = 0; i < tableMetadata.getFieldCount(); i++) {
@@ -201,7 +216,8 @@ public final class XSDUtils {
                 break;
             case JCoMetaData.TYPE_DATE:
                 element = doc.createElement("xs:element");
-                element.setAttribute("type", "xs:date");
+                // TODO use better type to include 0000-00-00
+                element.setAttribute("type", "xs:string");
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
@@ -256,7 +272,6 @@ public final class XSDUtils {
             case JCoMetaData.TYPE_TABLE:
                 element = doc.createElement("xs:element");
                 element.setAttribute("name", name);
-                element.setAttribute("maxOccurs", "unbounded");
                 element.setAttribute("minOccurs", "0");
 
                 Element complexTypeTable = doc.createElement("xs:complexType");
