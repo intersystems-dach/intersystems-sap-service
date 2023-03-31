@@ -26,7 +26,7 @@ Method OnProcessInput(pInput As com.intersystems.dach.ens.sap.SAPDataObject, pOu
       Set pRequest = ##class(EnsLib.EDI.XML.Document).%New(tStream)
       Set:'$ISOBJECT(pRequest) tSC = $$$ERROR($$$EnsErrGeneral, "Failed to generate XML document: "_$$$StatusDisplayString(%objlasterror))
       Quit:$$$ISERR(tSC) tSC
-      Set pRequest.DocType = pInput.FunctionName
+      Set pRequest.DocType = pInput.FunctionName_":"_pInput.FunctionName
    }
    
    For iTarget=1:1:$L(..TargetConfigNames, ",") {
