@@ -55,6 +55,11 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ## Installation
 
+### Download the latest release
+
+1. Download the _intersystems-sap-service-\*.jar_ file from the [latest release](https://github.com/phil1436/intersystems-sap-service/releases/latest)
+2. Save the file to a folder visible to the InterSystems IRIS instance
+
 ### Setup an external language server
 
 1. In the Management Portal navigate to _System Administration > Configuration > Connectivity > External Language Servers_
