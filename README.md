@@ -7,10 +7,10 @@ An InterSystems SAP Business Service to receive from a SAP System.
 ---
 
 -   [Overview](#overview)
--   [Components](#components)
 -   [Dependencies](#dependencies)
 -   [Requirements](#requirements)
 -   [Installation](#installation)
+    -   [Download the latest release](#download-the-latest-release)
     -   [Setup an external language server](#setup-an-external-language-server)
     -   [Import proxy classes](#import-proxy-classes)
     -   [Setup a service](#setup-a-service)
@@ -22,6 +22,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [SAP Client Settings](#sap-client-settings)
     -   [XML](#xml)
     -   [Remote Inbound Adapter Settings](#remote-inbound-adapter-settings)
+-   [Bugs](#bugs)
 -   [Release Notes](#release-notes)
 
 ---
@@ -29,10 +30,6 @@ An InterSystems SAP Business Service to receive from a SAP System.
 ## Overview
 
 ![SAPService_Details](resources/SAPService_Details.jpg)
-
----
-
-## Components
 
 ---
 
@@ -154,11 +151,12 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 <!-- -   `Gateway Host` _string_ - The host address of the external language server to connect to. If you use a external language server this can be left empty.
 -   `Gateway Port` _integer_ - The port of the external language server to connect to. If you use a external language server this can be left empty. -->
-<!-- ---
+
+---
 
 ## Bugs
 
--   _no known bugs_ -->
+-   _no known bugs_
 
 ---
 
