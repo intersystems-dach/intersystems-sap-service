@@ -1,6 +1,6 @@
 <img src = "resources/logo.png" title = "logo" width = "50%"/>
 
-# InterSystems SAP Service **_TESTVERSION_**
+# InterSystems SAP Service
 
 An InterSystems SAP Business Service to receive from a SAP System.
 
@@ -159,9 +159,9 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
 
-<!-- ### [0.0.1-TESTVERSION](https://github.com/phil1436/intersystems-sap-service/tree/0.0.1)
+### [v1.0.0](https://github.com/phil1436/intersystems-sap-service/tree/1.0.0)
 
--   _Initial release_ -->
+-   _Initial release_
 
 ---
 
