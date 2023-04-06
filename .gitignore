@@ -109,3 +109,4 @@ javadoc/**
 **.jcoDestination
 src/ASPB/pex/**
 src/ASPB/sap/old/**
+src/com/intersystems/dach/tests/**
