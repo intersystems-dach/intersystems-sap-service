@@ -191,9 +191,12 @@ public final class XSDUtils {
         Element sequenceItem = doc.createElement("xs:sequence");
         complexTypeItem.appendChild(sequenceItem);
 
-        if (table.isEmpty()) {
-            return;
-        }
+        // TODO could throw exception
+        /*
+         * if (table.isEmpty()) {
+         * return;
+         * }
+         */
 
         root = sequenceItem;
 
@@ -252,28 +255,38 @@ public final class XSDUtils {
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
-                Element simpleType = doc.createElement("xs:simpleType");
-                Element restriction = doc.createElement("xs:restriction");
-                restriction.setAttribute("base", "xs:string");
-                Element length = doc.createElement("xs:maxLength");
-                length.setAttribute("value", metadata.getLength(i) + "");
-                restriction.appendChild(length);
-                simpleType.appendChild(restriction);
-                element.appendChild(simpleType);
+                if (metadata.getLength(i) == 0) {
+                    Element simpleType = doc.createElement("xs:simpleType");
+                    Element restriction = doc.createElement("xs:restriction");
+                    restriction.setAttribute("base", "xs:string");
+                    Element length = doc.createElement("xs:maxLength");
+                    length.setAttribute("value", metadata.getLength(i) + "");
+                    restriction.appendChild(length);
+                    simpleType.appendChild(restriction);
+                    element.appendChild(simpleType);
+                } else {
+                    element.setAttribute("type", "xs:string");
+                }
+
                 break;
             case JCoMetaData.TYPE_CHAR:
                 element = doc.createElement("xs:element");
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
-                Element simpleTypeChar = doc.createElement("xs:simpleType");
-                Element restrictionChar = doc.createElement("xs:restriction");
-                restrictionChar.setAttribute("base", "xs:string");
-                Element lengthChar = doc.createElement("xs:maxLength");
-                lengthChar.setAttribute("value", metadata.getLength(i) + "");
-                restrictionChar.appendChild(lengthChar);
-                simpleTypeChar.appendChild(restrictionChar);
-                element.appendChild(simpleTypeChar);
+                if (metadata.getLength(i) != 0) {
+                    Element simpleTypeChar = doc.createElement("xs:simpleType");
+                    Element restrictionChar = doc.createElement("xs:restriction");
+                    restrictionChar.setAttribute("base", "xs:string");
+                    Element lengthChar = doc.createElement("xs:maxLength");
+                    lengthChar.setAttribute("value", metadata.getLength(i) + "");
+                    restrictionChar.appendChild(lengthChar);
+                    simpleTypeChar.appendChild(restrictionChar);
+                    element.appendChild(simpleTypeChar);
+                } else {
+                    element.setAttribute("type", "xs:string");
+                }
+
                 break;
             case JCoMetaData.TYPE_STRUCTURE:
                 element = doc.createElement("xs:element");
