@@ -10,6 +10,8 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -99,6 +101,9 @@ public final class XSDUtils {
         schema.setAttribute("targetNamespace", XMLUtils.getXmlnamespace());
         schema.setAttribute("xmlns:tns", XMLUtils.getXmlnamespace());
         doc.appendChild(schema);
+
+        Comment comment = doc.createComment("Generated at " + new java.util.Date().toString());
+        doc.getDocumentElement().appendChild(comment);
 
         // create nullDate type
         Element nullDateType = doc.createElement("xs:simpleType");
@@ -284,6 +289,8 @@ public final class XSDUtils {
                     simpleTypeChar.appendChild(restrictionChar);
                     element.appendChild(simpleTypeChar);
                 } else {
+                    Comment comment = doc.createComment(name + " has length 0. This is not supported by XSD.");
+                    element.getParentNode().insertBefore(comment, element);
                     element.setAttribute("type", "xs:string");
                 }
 
