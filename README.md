@@ -16,6 +16,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [Setup a service](#setup-a-service)
     -   [Configure InterSystems Credentials](#configure-intersystems-credentials)
     -   [Configure the service](#configure-the-service)
+-   [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
 -   [Settings](#settings)
     -   [SAP Service](#sap-service)
     -   [SAP Server Settings](#sap-server-settings)
@@ -109,6 +110,12 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ---
 
+## Lookup Table for XML Schemas
+
+You can use a lookup table to map the XML schema to the SAP function module. Navigate to _Interoperability > Configure > Data Lookup Tables_ and create a new lookup table. The key is the name of the SAP function module and the value is the XML schema with the category, sperated by an double point e.g. `My_Category:My_XML_Schema`.
+
+---
+
 ## Settings
 
 ### SAP Service
@@ -138,6 +145,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 -   `ImportXMLSchemas` _boolean_ - If enabled, the service will try to import the XML Schemas from the SAP System. _(default: false)_
 -   `XMLSchemaPath` _string_ - The path to the folder where the XML Schemas should be stored. If the folder does not exist, it will be created.
+-   `LookUpTableName` _string_ - The name of the table you configured in [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas). If left empty no lookup table will be used.
 
 <!-- ### Logging
 
