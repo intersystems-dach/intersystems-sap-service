@@ -88,7 +88,7 @@ public class TestRunner implements Runnable {
 
         try {
             Thread.sleep(testCase.getWaitTimeMs());
-        } catch (Exception e) { 
+        } catch (Exception e) {
             // Ignore exception
         }
 
