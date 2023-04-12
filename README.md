@@ -116,6 +116,91 @@ You can use a lookup table to map the XML schema to the SAP function module. Nav
 
 ---
 
+## Flatten Tables Items
+
+You can use the `FlattenTables` parameter to flatten the tables in the SAP response. The parameter is a boolean and if enabled, the service will flatten the tables in the SAP response. The default value is `false`.
+
+| Name | Age | State |
+| ---- | --- | ----- |
+| John | 42  | NY    |
+| Mary | 32  | CA    |
+
+The XML for the above table would look like this with the `FlattenTables` parameter set to `false`:
+
+```xml
+...
+<Person>
+    <item>
+        <Name>John</Name>
+        <Age>42</Age>
+        <State>NY</State>
+    </item>
+    <item>
+        <Name>Mary</Name>
+        <Age>32</Age>
+        <State>CA</State>
+    </item>
+</Person>
+...
+```
+
+And the corresponding schema would look like this:
+
+```xml
+...
+<xs:element name="Person" minOccurs="0">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Name" type="xs:string" minOccurs="0"/>
+                        <xs:element name="Age" type="xs:integer" minOccurs="0"/>
+                        <xs:element name="State" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+...
+```
+
+The XML for the above table would look like this with the `FlattenTables` parameter set to `true`:
+
+```xml
+...
+<Person>
+    <Name>John</Name>
+    <Age>42</Age>
+    <State>NY</State>
+</Person>
+<Person>
+    <Name>Mary</Name>
+    <Age>32</Age>
+    <State>CA</State>
+</Person>
+...
+```
+
+And the corresponding schema would look like this:
+
+```xml
+...
+<xs:element name="Person" minOccurs="0" maxOccurs="unbounded">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="Name" type="xs:string" minOccurs="0"/>
+            <xs:element name="Age" type="xs:integer" minOccurs="0"/>
+            <xs:element name="State" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+...
+```
+
+---
+
 ## Settings
 
 ### SAP Service
@@ -146,6 +231,7 @@ You can use a lookup table to map the XML schema to the SAP function module. Nav
 -   `ImportXMLSchemas` _boolean_ - If enabled, the service will try to import the XML Schemas from the SAP System. _(default: false)_
 -   `XMLSchemaPath` _string_ - The path to the folder where the XML Schemas should be stored. If the folder does not exist, it will be created.
 -   `LookUpTableName` _string_ - The name of the table you configured in [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas). If left empty no lookup table will be used.
+-   `FlattenTablesItems` _boolean_ - If enabled, the service will flatten the tables in the XML. See [Flatten Tables Items](#flatten-tables-items) for more information _(default: false)_
 
 <!-- ### Logging
 

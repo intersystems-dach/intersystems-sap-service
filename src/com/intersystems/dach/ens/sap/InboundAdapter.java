@@ -20,6 +20,8 @@ import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
+import com.intersystems.dach.sap.utils.XMLUtils;
+import com.intersystems.dach.sap.utils.XSDUtils;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
@@ -62,6 +64,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
     public int QueueWarningThreshold = 100;
+
+    @FieldMetadata(Category = "SAP Service", Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
+    public boolean FlattenTablesItems = false;
 
     // Server Connection
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWHOST)
@@ -110,9 +115,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     public String SAPLanguage = "";
 
     /**
-     * ******************
+     * ***************
      * *** Members ***
-     * ******************
+     * ***************
      */
 
     private IRIS iris;
@@ -128,6 +133,10 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @Override
     public void OnInit() throws Exception {
         iris = GatewayContext.getIRIS();
+
+        // Prepare XMLUtils and XSDUtils
+        XMLUtils.setFlattenTablesItems(FlattenTablesItems);
+        XSDUtils.setFlattenTablesItems(FlattenTablesItems);
 
         // Prepare buffers
         importDataQueue = new ConcurrentLinkedQueue<SAPImportData>();
