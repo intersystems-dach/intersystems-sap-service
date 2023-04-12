@@ -223,9 +223,9 @@ public final class XSDUtils {
     private static Element convertElement(int i, JCoMetaData metadata, Document doc, JCoParameterList parameterList,
             JCoRecord parent) {
         String name = metadata.getName(i).replace("/", "_-");
+        String description = metadata.getDescription(i);
 
         Element element;
-
         switch (metadata.getType(i)) {
             case JCoMetaData.TYPE_INT:
                 element = doc.createElement("xs:element");
@@ -270,6 +270,8 @@ public final class XSDUtils {
                     simpleType.appendChild(restriction);
                     element.appendChild(simpleType);
                 } else {
+                    description += ";" + name + " has length 0. This is not supported by XSD.";
+
                     element.setAttribute("type", "xs:string");
                 }
 
@@ -289,8 +291,8 @@ public final class XSDUtils {
                     simpleTypeChar.appendChild(restrictionChar);
                     element.appendChild(simpleTypeChar);
                 } else {
-                    Comment comment = doc.createComment(name + " has length 0. This is not supported by XSD.");
-                    element.getParentNode().insertBefore(comment, element);
+                    description += ";" + name + " has length 0. This is not supported by XSD.";
+
                     element.setAttribute("type", "xs:string");
                 }
 
@@ -327,6 +329,10 @@ public final class XSDUtils {
 
                 break;
         }
+
+        // TODO add description at a better place
+        Comment comment = doc.createComment(name + " : " + description);
+        element.appendChild(comment);
         return element;
     }
 
