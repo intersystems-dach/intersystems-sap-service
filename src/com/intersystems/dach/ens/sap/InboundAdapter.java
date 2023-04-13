@@ -50,12 +50,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Service", Description = "If enabled the service will return a JSON object instead of a XML object")
     public boolean UseJSON = false;
 
-    @FieldMetadata(Category = "SAP Service", Description = "If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.")
-    public boolean ImportXMLSchemas = false;
-
-    @FieldMetadata(Category = "SAP Service", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
-    public String XMLSchemaPath = "";
-
     @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>This is the timout for the SAP function handler. If the confirmation takes longer an AbapException exception is thrown.")
     public Integer ConfirmationTimeoutSec = 10;
 
@@ -68,10 +62,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
     public int QueueWarningThreshold = 100;
 
-    @FieldMetadata(Category = "SAP Service", Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
-    public boolean FlattenTablesItems = false;
-
-    // Server Connection
+    // SAP Server Settings
     @SAPJCoPropertyAnnotation(jCoName = ServerDataProvider.JCO_GWHOST)
     @FieldMetadata(Category = "SAP Server Settings", IsRequired = true, Description = "REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.")
     public String GatewayHost = "";
@@ -92,7 +83,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Server Settings", Description = "Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST")
     public String Repository = "";
 
-    // Client Connection
+    // SAP Client Settings
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_ASHOST)
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.")
     public String HostAddress = "";
@@ -105,6 +96,10 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the system number. The system number is used to connect to the SAP system.")
     public String SystemNumber = "";
 
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_LANG)
+    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the language. The language is used to connect to the SAP system.")
+    public String SAPLanguage = "";
+
     @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_USER)
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the username. The username is used to connect to the SAP system.")
     public String Username = "";
@@ -113,9 +108,15 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the password. The password is used to connect to the SAP system.")
     public String Password = "";
 
-    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_LANG)
-    @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the language. The language is used to connect to the SAP system.")
-    public String SAPLanguage = "";
+    // XML
+    @FieldMetadata(Category = "XML", Description = "If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.")
+    public boolean ImportXMLSchemas = false;
+
+    @FieldMetadata(Category = "XML", Description = "If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.")
+    public String XMLSchemaPath = "";
+
+    @FieldMetadata(Category = "XML", Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
+    public boolean FlattenTablesItems = false;
 
     /**
      * ***************
