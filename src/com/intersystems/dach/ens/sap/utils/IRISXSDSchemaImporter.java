@@ -81,22 +81,18 @@ public class IRISXSDSchemaImporter {
      */
     public boolean importSchemaIfNotExists(String schemaId, String xsdSchema)
             throws IOException, IllegalStateException, IllegalArgumentException, RuntimeException {
-        trace("Start importSchemaIfNotExists!!");
 
         if (xsdDirectoryPath == null) {
             throw new IllegalStateException("IRISXSDUtils has not been initialized.");
         }
-        trace("IF1");
 
         if (xsdSchema == null || xsdSchema.isEmpty()) {
             throw new IllegalArgumentException("Schema is null or empty.");
         }
-        trace("IF2");
 
         if (knownSchemas.contains(schemaId)) {
             return false;
         }
-        trace("IF3");
 
         // Write schema to file
         Path xsdFilePath = Paths.get(xsdDirectoryPath.toString(), schemaId + ".xsd");
