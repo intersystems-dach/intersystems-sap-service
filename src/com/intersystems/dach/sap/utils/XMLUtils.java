@@ -3,6 +3,8 @@ package com.intersystems.dach.sap.utils;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -15,6 +17,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -26,6 +30,8 @@ import org.xml.sax.SAXException;
  * 
  */
 public final class XMLUtils {
+
+    private static boolean FlattenTablesItems = false;
 
     // make this a static class
     private XMLUtils() {
@@ -59,6 +65,14 @@ public final class XMLUtils {
         // add header
         doc.insertBefore(doc.createProcessingInstruction("xml", XMLHEADER),
                 doc.getFirstChild());
+
+        if (XMLUtils.FlattenTablesItems) {
+            List<Node> nodesToRemove = new ArrayList<Node>();
+            replaceItem(doc.getDocumentElement(), doc, nodesToRemove);
+
+            // remove nodes
+            removeNodes(nodesToRemove);
+        }
 
         // convert document to string
         return convertXMLDocumentToString(doc);
@@ -106,12 +120,81 @@ public final class XMLUtils {
     }
 
     /**
+     * Replace item with parent node name
+     * 
+     * @param node        - current node
+     * @param doc         - XML Document
+     * @param removeNodes - list of nodes to remove later
+     */
+    private static void replaceItem(Node node, Document doc, List<Node> removeNodes) {
+
+        if (node.getNodeName().equals("item")) {
+            // rename item to parent node name
+            doc.renameNode(node, null, node.getParentNode().getNodeName());
+            // add parent node to remove list
+            if (!removeNodes.contains(node.getParentNode())) {
+                removeNodes.add(node.getParentNode());
+            }
+        }
+
+        // iterate through child nodes
+        NodeList nodeList = node.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node currentNode = nodeList.item(i);
+            if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+                // calls this method for all the children which is Element
+                replaceItem(currentNode, doc, removeNodes);
+            }
+        }
+    }
+
+    /**
+     * Remove nodes from XML Document
+     * 
+     * @param nodesToRemove - list of nodes to remove
+     */
+    private static void removeNodes(List<Node> nodesToRemove) {
+        if (nodesToRemove.isEmpty()) {
+            return;
+        }
+
+        List<Node> childs = new ArrayList<Node>();
+
+        // get child of removed nodes
+        for (Node node : nodesToRemove) {
+
+            NodeList nodeList = node.getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node currentNode = nodeList.item(i);
+
+                if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+                    childs.add(currentNode);
+                }
+            }
+        }
+
+        // appent child to new parent
+        for (Node node : childs) {
+            node.getParentNode().getParentNode().appendChild(node);
+        }
+    }
+
+    /**
      * Get the XML namespace
      * 
      * @return XML namespace
      */
     public static String getXmlnamespace() {
         return XMLNAMESPACE;
+    }
+
+    /**
+     * Set the flag to flatten tables items
+     * 
+     * @param flattenTablesItems - flag to flatten tables items
+     */
+    public static void setFlattenTablesItems(boolean flattenTablesItems) {
+        XMLUtils.FlattenTablesItems = flattenTablesItems;
     }
 
 }

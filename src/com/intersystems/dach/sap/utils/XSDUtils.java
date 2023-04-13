@@ -43,6 +43,8 @@ public final class XSDUtils {
 
     private static Map<String, String> schemaCache = new Hashtable<String, String>();
 
+    private static boolean FlattenTablesItems = false;
+
     /**
      * This method converts a JCoFunction to an XSD String.
      * 
@@ -130,7 +132,9 @@ public final class XSDUtils {
         schema.appendChild(functionName);
         Element complexType = doc.createElement("xs:complexType");
         functionName.appendChild(complexType);
-        Element sequence = doc.createElement("xs:sequence");
+        // TODO use choice?
+        // TODO when FlattenTablesItems is false, use sequence instead of all
+        Element sequence = doc.createElement("xs:all");
         complexType.appendChild(sequence);
 
         JCoParameterList parameterList = (isImportParameter ? function
@@ -180,21 +184,26 @@ public final class XSDUtils {
         // add sequence
         Element sequence = doc.createElement("xs:sequence");
         root.appendChild(sequence);
+        root = sequence;
 
         // add item element
-        Element itemElement = doc.createElement("xs:element");
-        itemElement.setAttribute("name", "item");
-        itemElement.setAttribute("maxOccurs", "unbounded");
-        itemElement.setAttribute("minOccurs", "0");
-        sequence.appendChild(itemElement);
+        if (!FlattenTablesItems) {
+            Element itemElement = doc.createElement("xs:element");
+            itemElement.setAttribute("name", "item");
+            itemElement.setAttribute("maxOccurs", "unbounded");
+            itemElement.setAttribute("minOccurs", "0");
+            sequence.appendChild(itemElement);
 
-        // complex type for item element
-        Element complexTypeItem = doc.createElement("xs:complexType");
-        itemElement.appendChild(complexTypeItem);
+            // complex type for item element
+            Element complexTypeItem = doc.createElement("xs:complexType");
+            itemElement.appendChild(complexTypeItem);
 
-        // sequence for item element
-        Element sequenceItem = doc.createElement("xs:sequence");
-        complexTypeItem.appendChild(sequenceItem);
+            // sequence for item element
+            Element sequenceItem = doc.createElement("xs:sequence");
+            complexTypeItem.appendChild(sequenceItem);
+
+            root = sequenceItem;
+        }
 
         // TODO could throw exception
         /*
@@ -202,8 +211,6 @@ public final class XSDUtils {
          * return;
          * }
          */
-
-        root = sequenceItem;
 
         JCoMetaData tableMetadata = table.getMetaData();
         for (int i = 0; i < tableMetadata.getFieldCount(); i++) {
@@ -314,6 +321,10 @@ public final class XSDUtils {
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
+                if (FlattenTablesItems) {
+                    element.setAttribute("maxOccurs", "unbounded");
+                }
+
                 Element complexTypeTable = doc.createElement("xs:complexType");
 
                 JCoTable table = parent == null ? parameterList.getTable(name) : parent.getTable(name);
@@ -334,6 +345,15 @@ public final class XSDUtils {
         Comment comment = doc.createComment(name + " : " + description);
         element.appendChild(comment);
         return element;
+    }
+
+    /**
+     * Set the flag to flatten tables items
+     * 
+     * @param flattenTablesItems - flag to flatten tables items
+     */
+    public static void setFlattenTablesItems(boolean flattenTablesItems) {
+        XSDUtils.FlattenTablesItems = flattenTablesItems;
     }
 
 }

@@ -9,7 +9,7 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,EnableTracing:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML,FlattenTablesItems:XML";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -39,6 +39,9 @@ Property ConfirmationTimeoutSec As %Integer(MAXVAL = 600, MINVAL = 1) [ InitialE
 
 /// Send test messages for debugging and testing purposes.
 Property EnableTesting As %Boolean [ InitialExpression = 0 ];
+
+/// If enabled the service will print all messages to the log. This is useful for debugging purposes.
+Property EnableTracing As %Boolean [ InitialExpression = 0 ];
 
 /// REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.
 Property QueueWarningThreshold As %Integer(MAXVAL = 10000, MINVAL = 1) [ InitialExpression = 100, Required ];
@@ -91,6 +94,9 @@ Property ImportXMLSchemas As %Boolean [ InitialExpression = 0 ];
 /// If import XML schemas is enabled the XSD files are stored here. This folder must be accessible by the IRIS instance and the JAVA language server.
 Property XMLSchemaPath As %String(MAXLEN = "");
 
+/// If enabled the adapter will flatten the tables and will remove the item tags.
+Property FlattenTablesItems As %Boolean [ InitialExpression = 0 ];
+
 Method %remoteClassnameGet()
 {
 	Quit ..#%REMOTECLASSNAME
@@ -124,6 +130,12 @@ Method SetPropertyValues()
 
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"EnableTesting") = ..EnableTesting
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"EnableTracing") = ..EnableTracing
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
@@ -184,6 +196,12 @@ Method SetPropertyValues()
 
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"QueueWarningThreshold") = ..QueueWarningThreshold
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"FlattenTablesItems") = ..FlattenTablesItems
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
