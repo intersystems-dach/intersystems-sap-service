@@ -17,6 +17,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [Configure InterSystems Credentials](#configure-intersystems-credentials)
     -   [Configure the service](#configure-the-service)
 -   [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
+-   [Flatten Tables Items](#flatten-tables-items)
 -   [Settings](#settings)
     -   [SAP Service](#sap-service)
     -   [SAP Server Settings](#sap-server-settings)
@@ -30,7 +31,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ## Overview
 
-![SAPService_Details](resources/SAPService_Details.jpg)
+![Overview](resources/overview.png)
 
 ---
 
