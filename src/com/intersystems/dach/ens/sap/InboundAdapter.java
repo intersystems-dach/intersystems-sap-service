@@ -13,13 +13,14 @@ import com.intersystems.dach.ens.sap.testing.TestRunner;
 import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
+import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.SAPServer;
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
-import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
+import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
@@ -29,6 +30,7 @@ import com.intersystems.jdbc.IRIS;
 import com.intersystems.jdbc.IRISObject;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
+import com.sap.conn.jco.server.JCoServerState;
 
 /**
  * A InboundAdapter to receive messages from a SAP system.
@@ -38,7 +40,7 @@ import com.sap.conn.jco.ext.ServerDataProvider;
  */
 @ClassMetadata(Description = "A InterSystems InboundAdapter to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
 public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
-        implements SAPServerImportDataHandler, SAPServerErrorHandler, SAPServerExceptionHandler {
+        implements SAPServerImportDataHandler, SAPServerErrorHandler, SAPServerExceptionHandler, SAPServerStateHandler {
 
     /**
      * *****************************
@@ -136,11 +138,24 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void OnInit() throws Exception {
+        // register trace handler
+        if (this.EnableTracing) {
+            LOGINFO("Tracing is enabled.");
+            TraceManager.registerTraceMsgHandler((traceMsg) -> LOGINFO(traceMsg));
+        }
+
+        // get iris instance
         iris = GatewayContext.getIRIS();
+
+        // print format
+        LOGINFO((UseJSON ? "JSON" : "XML") + " is enabled.");
 
         // Prepare XMLUtils and XSDUtils
         XMLUtils.setFlattenTablesItems(FlattenTablesItems);
         XSDUtils.setFlattenTablesItems(FlattenTablesItems);
+        if (FlattenTablesItems) {
+            LOGINFO("FlattenTablesItems is enabled.");
+        }
 
         // Prepare buffers
         importDataQueue = new ConcurrentLinkedQueue<SAPImportData>();
@@ -151,14 +166,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
             irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
-            if (this.EnableTracing) {
-                irisSchemaImporter.registerTraceMsgHandler(new SAPServerTraceMsgHandler() {
-                    @Override
-                    public void onTraceMSg(String traceMsg) {
-                        LOGINFO(traceMsg);
-                    }
-                });
-            }
         }
 
         // Prepare SAP JCo server
@@ -168,15 +175,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
+            sapServer.registerStateHandler(this);
             sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
-            if (this.EnableTracing) {
-                sapServer.registerTraceMsgHandler(new SAPServerTraceMsgHandler() {
-                    @Override
-                    public void onTraceMSg(String traceMsg) {
-                        LOGINFO(traceMsg);
-                    }
-                });
-            }
             sapServer.start();
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
@@ -262,6 +262,13 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
          * OnProcessInput immediately again.
          */
         BusinessHost.irisHandle.set("%WaitForNextCallInterval", importDataQueue.isEmpty());
+
+        if (importDataQueue.isEmpty()) {
+            TraceManager.traceMessage("No data in queue, wait for next call intervall.");
+        } else {
+            TraceManager.traceMessage("Data in queue, call OnProcessInput again.");
+        }
+
     }
 
     @Override
@@ -316,6 +323,11 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         this.exceptionBuffer.add(e);
     }
 
+    @Override
+    public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
+        TraceManager.traceMessage("SAP server state changed from " + oldState + " to " + newState);
+    }
+
     /**
      * This is a workaround to handle a bug in IRIS < 2022.1
      * 
@@ -354,4 +366,5 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
         return properties;
     }
+
 }

@@ -1,10 +1,8 @@
 package com.intersystems.dach.sap.handlers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import javax.naming.TimeLimitExceededException;
 
+import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
@@ -29,8 +27,6 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
     // The callback function to call
     private final SAPServerImportDataHandler importDataHandler;
 
-    private Collection<SAPServerTraceMsgHandler> traceHandlers;
-
     private long confirmationTimeoutMs;
 
     /**
@@ -39,17 +35,10 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * 
      * @param callback The callback function to call
      */
-    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler,
-            Collection<SAPServerTraceMsgHandler> traceHandlers,
-            boolean useJson, long confirmationTimeoutMs) {
+    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, boolean useJson,
+            long confirmationTimeoutMs) {
         this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.importDataHandler = importDataHandler;
-        if (traceHandlers != null) {
-            this.traceHandlers = traceHandlers;
-        } else {
-            // Avoid null pointer exceptions
-            this.traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
-        }
         this.useJson = useJson;
     }
 
@@ -60,37 +49,37 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
         String data = null;
         String schema = null;
 
-        for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
-            tracehandler.onTraceMSg("Handle request by function '" + functionName + "'.");
-        }
+        TraceManager.traceMessage("Handle request by function '" + functionName + "'.");
 
         if (useJson) {
             data = function.getImportParameterList().toJSON();
         } else {
             try {
                 data = XMLUtils.convert(function.getImportParameterList().toXML(), functionName);
+            } catch (Exception e) {
+                TraceManager.traceMessage("Could not convert import parameters to XML: " + e.getMessage());
+                throw new AbapClassException(e);
+            }
+            try {
                 schema = XSDUtils.createXSDString(function, true, false);
             } catch (Exception e) {
+                TraceManager.traceMessage(
+                        "Could not create XSD schema for function '" + functionName + "': " + e.getMessage());
                 throw new AbapClassException(e);
             }
         }
         try {
             // call the import data handler function
             SAPImportData importData = new SAPImportData(functionName, data, useJson, schema);
-            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
-                tracehandler.onTraceMSg("Calling import data receiver handler.");
-            }
+
+            TraceManager.traceMessage("Calling import data receiver handler.");
             importDataHandler.onImportDataReceived(importData);
 
-            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
-                tracehandler.onTraceMSg("Waiting for confirmation.");
-            }
+            TraceManager.traceMessage("Waiting for confirmation for message with ID " + importData.getID() + ".");
 
             importData.waitForConfirmation(confirmationTimeoutMs);
 
-            for (SAPServerTraceMsgHandler tracehandler : traceHandlers) {
-                tracehandler.onTraceMSg("Confirmation received.");
-            }
+            TraceManager.traceMessage("Confirmation received for message with ID " + importData.getID() + ".");
         } catch (TimeLimitExceededException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
         } catch (Exception e) {

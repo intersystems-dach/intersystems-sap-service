@@ -11,6 +11,10 @@ import javax.naming.TimeLimitExceededException;
  */
 public class SAPImportData {
 
+    private static long counter = 0;
+
+    private final long ID;
+
     private final String functionName;
 
     private final String data;
@@ -42,6 +46,8 @@ public class SAPImportData {
         this.data = data;
         this.isJSON = isJSON;
         this.schema = schema;
+        counter++;
+        ID = counter;
     }
 
     /**
@@ -107,6 +113,15 @@ public class SAPImportData {
         synchronized (this) {
             this.notify();
         }
+    }
+
+    /**
+     * Get the ID of the data
+     * 
+     * @return the ID
+     */
+    public long getID() {
+        return ID;
     }
 
 }
