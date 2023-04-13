@@ -177,6 +177,11 @@ public final class XMLUtils {
         for (Node node : childs) {
             node.getParentNode().getParentNode().appendChild(node);
         }
+
+        // remove nodes
+        for (Node node : nodesToRemove) {
+            node.getParentNode().removeChild(node);
+        }
     }
 
     /**
