@@ -123,6 +123,9 @@ public class SAPServer implements JCoServerErrorListener,
         // TODO is needed?
         StringBuilder sb = new StringBuilder();
         for (Entry<Object, Object> e : settings.entrySet()) {
+            if (e.getKey().toString().equals(DestinationDataProvider.JCO_PASSWD)) {
+                continue;
+            }
             sb.append(e);
         }
         TraceManager.traceMessage("Settings: " + sb.toString());

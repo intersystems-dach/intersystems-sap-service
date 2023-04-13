@@ -197,7 +197,10 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             // No data in queue, wait for next call intervall
             BusinessHost.irisHandle.set("%WaitForNextCallInterval", true);
             // Reset warning flag
-            warningActiveFlag = false;
+            if (warningActiveFlag) {
+                LOGINFO("Back to normal load.");
+                warningActiveFlag = false;
+            }
             return;
         }
 
@@ -325,7 +328,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager.traceMessage("SAP server state changed from " + oldState + " to " + newState);
+        TraceManager
+                .traceMessage("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
     }
 
     /**
