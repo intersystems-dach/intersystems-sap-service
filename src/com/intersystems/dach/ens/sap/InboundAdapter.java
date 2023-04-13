@@ -62,6 +62,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Service", Description = "Send test messages for debugging and testing purposes.")
     public boolean EnableTesting = false;
 
+    @FieldMetadata(Category = "SAP Service", Description = "If enabled the service will print all messages to the console. This is useful for debugging purposes.")
+    public boolean EnableTracing = false;
+
     @FieldMetadata(Category = "SAP Service", IsRequired = true, Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
     public int QueueWarningThreshold = 100;
 
@@ -147,6 +150,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
             irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
+            if (this.EnableTracing) {
+                irisSchemaImporter.registerTraceMsgHandler(new SAPServerTraceMsgHandler() {
+                    @Override
+                    public void onTraceMSg(String traceMsg) {
+                        LOGINFO(traceMsg);
+                    }
+                });
+            }
         }
 
         // Prepare SAP JCo server
@@ -157,7 +168,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
             sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
-            if (this.EnableTesting) {
+            if (this.EnableTracing) {
                 sapServer.registerTraceMsgHandler(new SAPServerTraceMsgHandler() {
                     @Override
                     public void onTraceMSg(String traceMsg) {
