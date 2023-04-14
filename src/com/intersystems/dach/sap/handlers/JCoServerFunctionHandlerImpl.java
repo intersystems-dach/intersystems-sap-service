@@ -55,17 +55,22 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
             data = function.getImportParameterList().toJSON();
         } else {
             try {
-                data = XMLUtils.convert(function.getImportParameterList().toXML(), functionName);
+                String importParameterXML = function.getImportParameterList().toXML();
+                TraceManager.traceMessage("ImportParameter: " + importParameterXML);
+                TraceManager.traceMessage("Convertig to XML...");
+                data = XMLUtils.convert(importParameterXML, functionName);
+                TraceManager.traceMessage("XML data: " + data);
             } catch (Exception e) {
                 TraceManager.traceMessage("Could not convert import parameters to XML: " + e.getMessage());
                 throw new AbapClassException(e);
             }
             try {
+                TraceManager.traceMessage("Generating XSD schema...");
                 schema = XSDUtils.createXSDString(function, true, false);
+                TraceManager.traceMessage("XSD data: " + schema);
             } catch (Exception e) {
                 TraceManager.traceMessage(
                         "Could not create XSD schema for function '" + functionName + "': " + e.getMessage());
-                throw new AbapClassException(e);
             }
         }
         try {

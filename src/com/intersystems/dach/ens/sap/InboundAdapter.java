@@ -166,6 +166,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
             irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
+            LOGINFO("XSD directory: " + irisSchemaImporter.getXsdDirectoryPath());
         }
 
         // Prepare SAP JCo server
@@ -215,12 +216,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         // Import XML schemas
         if (!importData.isJSON() && ImportXMLSchemas && irisSchemaImporter != null) {
-            // create dir structure
-            String xsdDir = irisSchemaImporter.createStructureIfNotExists();
-            if (xsdDir != null) {
-                LOGINFO("Created XML schema folder: " + xsdDir);
-            }
-
             // import xsd
             try {
                 boolean importResult = irisSchemaImporter.importSchemaIfNotExists(

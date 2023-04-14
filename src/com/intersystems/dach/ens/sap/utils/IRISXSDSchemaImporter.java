@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
@@ -28,7 +27,6 @@ public class IRISXSDSchemaImporter {
     private Collection<String> knownSchemas = null;
     private boolean structureCreated;
 
-    // make this class static
     public IRISXSDSchemaImporter(String xsdDirectoryPath) throws IOException {
         this.knownSchemas = new ArrayList<String>();
         this.structureCreated = false;
@@ -56,22 +54,10 @@ public class IRISXSDSchemaImporter {
     }
 
     /**
-     * Creates the directory structure for the XSD schemas if it does not exist yet.
-     * 
-     * @return The path of the created directory or null if the directory already
-     *         exists.
-     * @throws IOException
-     * @throws InvalidPathException
+     * @return XsdDirectoryPath
      */
-    public String createStructureIfNotExists() throws IOException, InvalidPathException {
-        if (this.structureCreated) {
-            return null;
-        }
-
-        Files.createDirectory(xsdDirectoryPath);
-        this.structureCreated = true;
-        TraceManager.traceMessage("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
-        return this.xsdDirectoryPath.toString();
+    public Path getXsdDirectoryPath() {
+        return xsdDirectoryPath;
     }
 
     /**
@@ -83,17 +69,24 @@ public class IRISXSDSchemaImporter {
      */
     public boolean importSchemaIfNotExists(String schemaId, String xsdSchema)
             throws IOException, IllegalStateException, IllegalArgumentException, RuntimeException {
-
-        if (xsdDirectoryPath == null) {
-            throw new IllegalStateException("IRISXSDUtils has not been initialized.");
+        
+        if (knownSchemas.contains(schemaId)) {
+            return false;
         }
 
         if (xsdSchema == null || xsdSchema.isEmpty()) {
             throw new IllegalArgumentException("Schema is null or empty.");
         }
 
-        if (knownSchemas.contains(schemaId)) {
-            return false;
+        if (xsdDirectoryPath == null) {
+            throw new IllegalStateException("IRISXSDUtils has not been initialized.");
+        }
+        
+        // Create directory if it does not exist
+        if (!this.structureCreated) {
+            Files.createDirectory(xsdDirectoryPath);
+            this.structureCreated = true;
+            TraceManager.traceMessage("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
         }
 
         // Write schema to file
