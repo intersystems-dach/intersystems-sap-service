@@ -130,10 +130,6 @@ public class SAPServer implements JCoServerErrorListener,
         serverName = settings.getProperty(ServerDataProvider.JCO_PROGID);
         destinationName = settings.getProperty(ServerDataProvider.JCO_REP_DEST);
 
-        // Register the data providers if not done yet.
-        DestinationDataProviderImpl.tryRegister();
-        ServerDataProviderImpl.tryRegister();
-
         try {
             DestinationDataProviderImpl.setProperties(destinationName, settings);
             ServerDataProviderImpl.setProperties(serverName, settings);  

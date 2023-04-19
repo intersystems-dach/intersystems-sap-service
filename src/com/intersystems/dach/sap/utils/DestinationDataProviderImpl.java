@@ -30,43 +30,12 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
     // Make this a singleton class
     private DestinationDataProviderImpl() { }
 
-    private static DestinationDataProviderImpl getInstance() {
-        if (singletonInstance == null) {
-            singletonInstance = new DestinationDataProviderImpl();
-        }
-        return singletonInstance;
-    }
-    
-    /**
-     * Registers the destination data handler instance with the SAP JCo environment.
-     * @return
-     */
-    public static boolean tryRegister() {
+    // Register this data provider in the static block
+    static {
         if (!Environment.isDestinationDataProviderRegistered()) {
-            Environment.registerDestinationDataProvider(getInstance());
-            return true;
-        } else {
-            return false;
+            singletonInstance = new DestinationDataProviderImpl();
+            Environment.registerDestinationDataProvider(singletonInstance);
         }
-    }
-
-    /**
-     * Unregisters the destination data handler instance from the SAP JCo environment.
-     * @return True if the handler was unregistered, false if not.
-     */
-    public static boolean unregister() {
-        if (Environment.isDestinationDataProviderRegistered()) {
-            Environment.unregisterDestinationDataProvider(getInstance());
-
-            while (Environment.isDestinationDataProviderRegistered()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) { }
-            }
-
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -80,15 +49,12 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
             throw new IllegalStateException("DestionationDataHandler is not initialized.");
         }
 
-        TraceManager.traceMessage("a");
-        if (getInstance().destinationProperties.containsKey(destinationName)) {
+        if (singletonInstance.destinationProperties.containsKey(destinationName)) {
             throw new IllegalStateException("Properties for destination '" + destinationName + "' already set.");
         }
-        TraceManager.traceMessage("b");
-        getInstance().destinationProperties.put(destinationName, properties);
-        TraceManager.traceMessage("c");
-        if (getInstance().destinationDataEventListener != null) {
-            getInstance().destinationDataEventListener.updated(destinationName);
+        singletonInstance.destinationProperties.put(destinationName, properties);
+        if (singletonInstance.destinationDataEventListener != null) {
+            singletonInstance.destinationDataEventListener.updated(destinationName);
         }
     }
 
@@ -103,12 +69,9 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
             throw new IllegalStateException("DestionationDataHandler is not initialized.");
         }
 
-        Properties properties = getInstance().destinationProperties.remove(destinationName);
-        if (getInstance().destinationDataEventListener != null) {
-            getInstance().destinationDataEventListener.deleted(destinationName);
-        }
-        if (getInstance().destinationProperties.isEmpty()) {
-            unregister();
+        Properties properties = singletonInstance.destinationProperties.remove(destinationName);
+        if (singletonInstance.destinationDataEventListener != null) {
+            singletonInstance.destinationDataEventListener.deleted(destinationName);
         }
 
         return properties;
@@ -116,7 +79,6 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
 
     @Override
     public Properties getDestinationProperties(String destinationName) throws DataProviderException {
-        TraceManager.traceMessage("DestionationDataProvider getDestinationProperties called with param:" + destinationName);
         if (destinationProperties.containsKey(destinationName)) {
             return destinationProperties.get(destinationName);
         } else {

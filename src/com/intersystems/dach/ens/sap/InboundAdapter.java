@@ -133,6 +133,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
     private Queue<Exception> exceptionBuffer;
+    private Queue<String> traceBuffer;
 
     private boolean warningActiveFlag = false;
 
@@ -141,7 +142,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
-            TraceManager.registerTraceMsgHandler((traceMsg) -> LOGINFO(traceMsg));
+            traceBuffer = new ConcurrentLinkedQueue<String>();
+            TraceManager.registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
         }
 
         // get iris instance
@@ -193,6 +195,32 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void OnTask() throws Exception {
+        // Handle trace, errors and exceptions
+        if (traceBuffer != null) {
+            while(traceBuffer.size() > 0) {
+                String traceMsg = traceBuffer.poll();
+                LOGINFO("##TRACE## " +traceMsg);
+            }
+        }
+
+        boolean errorOrExceptionOccured = false;
+
+        while (exceptionBuffer.size() > 0) {
+            Exception e = exceptionBuffer.poll();
+            LOGERROR("An exception occured in SAP server: " + e.getMessage());
+            errorOrExceptionOccured = true;
+        }
+
+        while (errorBuffer.size() > 0) {
+            Error err = errorBuffer.poll();
+            LOGERROR("An error occured in SAP server: " + err.getMessage());
+            errorOrExceptionOccured = true;
+        }
+
+        if (errorOrExceptionOccured) {
+            throw new RuntimeException();
+        }
+
         if (importDataQueue.isEmpty()) {
             // No data in queue, wait for next call intervall
             BusinessHost.irisHandle.set("%WaitForNextCallInterval", true);
@@ -201,6 +229,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 LOGINFO("Back to normal load.");
                 warningActiveFlag = false;
             }
+            
             return;
         }
 
@@ -236,35 +265,20 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         BusinessHost.ProcessInput(irisObject);
         importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
-        // Handle errors and exceptions
-        boolean errorOrExceptionOccured = false;
-        while (exceptionBuffer.size() > 0) {
-            Exception e = exceptionBuffer.poll();
-            LOGERROR("An exception occured in SAP server: " + e.getMessage());
-            errorOrExceptionOccured = true;
-        }
-
-        while (errorBuffer.size() > 0) {
-            Error err = errorBuffer.poll();
-            LOGERROR("An error occured in SAP server: " + err.getMessage());
-            errorOrExceptionOccured = true;
-        }
-
-        if (errorOrExceptionOccured) {
-            throw new RuntimeException();
-        }
-
         /*
          * Wait for next call intervall if queue is empty or call
          * OnProcessInput immediately again.
          */
         BusinessHost.irisHandle.set("%WaitForNextCallInterval", importDataQueue.isEmpty());
 
-        if (importDataQueue.isEmpty()) {
-            TraceManager.traceMessage("No data in queue, wait for next call intervall.");
-        } else {
-            TraceManager.traceMessage("Data in queue, call OnProcessInput again.");
+        if (this.EnableTracing) {
+            if (importDataQueue.isEmpty()) {
+                this.LOGINFO("##TRACE## No data in queue, wait for next call intervall.");
+            } else {
+                this.LOGINFO("##TRACE## Data in queue, call OnProcessInput again.");
+            }
         }
+       
 
     }
 
@@ -322,8 +336,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager
-                .traceMessage("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
+        TraceManager.traceMessage("SAP server state changed from " +
+                oldState.toString() + " to " + newState.toString());
     }
 
     /**
