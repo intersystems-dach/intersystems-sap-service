@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 

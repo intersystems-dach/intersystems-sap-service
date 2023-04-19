@@ -2,8 +2,8 @@ package com.intersystems.dach.sap.handlers;
 
 import javax.naming.TimeLimitExceededException;
 
-import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.SAPImportData;
+import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
 import com.sap.conn.jco.AbapClassException;

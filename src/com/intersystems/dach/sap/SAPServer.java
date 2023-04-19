@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.Map.Entry;
 
-import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerFunctionHandlerImpl;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
@@ -13,9 +12,9 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
+import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
 import com.sap.conn.jco.ext.DestinationDataProvider;
-import com.sap.conn.jco.ext.Environment;
 import com.sap.conn.jco.ext.ServerDataProvider;
 import com.sap.conn.jco.server.DefaultServerHandlerFactory;
 import com.sap.conn.jco.server.JCoServer;
@@ -39,8 +38,8 @@ public class SAPServer implements JCoServerErrorListener,
         JCoServerExceptionListener,
         JCoServerStateChangedListener {
 
-    private static DestinationDataProvider destinationDataProvider = null;
-    private static ServerDataProvider serverDataProvider = null;
+    private String serverName;
+    private String destinationName;
 
     private JCoServer jCoServer;
 
@@ -115,12 +114,7 @@ public class SAPServer implements JCoServerErrorListener,
         if (isRunning()) {
             throw new Exception("Server is already running.");
         }
-        if (SAPServer.destinationDataProvider != null ||
-                SAPServer.serverDataProvider != null) {
-            throw new Exception("Data provider already registered.");
-        }
 
-        // TODO is needed?
         StringBuilder sb = new StringBuilder();
         for (Entry<Object, Object> e : settings.entrySet()) {
             if (e.getKey().toString().equals(DestinationDataProvider.JCO_PASSWD)) {
@@ -130,18 +124,30 @@ public class SAPServer implements JCoServerErrorListener,
         }
         TraceManager.traceMessage("Settings: " + sb.toString());
 
-        // Register data providers
-        TraceManager.traceMessage("Registering data providers.");
-        SAPServer.destinationDataProvider = new DestinationDataProviderImpl(settings);
-        SAPServer.serverDataProvider = new ServerDataProviderImpl(settings);
-        Environment.registerDestinationDataProvider(SAPServer.destinationDataProvider);
-        Environment.registerServerDataProvider(SAPServer.serverDataProvider);
+        TraceManager.traceMessage("Registering settings with data provider.");
 
-        TraceManager.traceMessage("Data providers registered.");
+        // Set server and destination name
+        serverName = settings.getProperty(ServerDataProvider.JCO_PROGID);
+        destinationName = settings.getProperty(ServerDataProvider.JCO_REP_DEST);
+
+        // Register the data providers if not done yet.
+        DestinationDataProviderImpl.tryRegister();
+        ServerDataProviderImpl.tryRegister();
+
+        try {
+            DestinationDataProviderImpl.setProperties(destinationName, settings);
+            ServerDataProviderImpl.setProperties(serverName, settings);  
+        } catch (IllegalStateException e) {
+            throw new Exception("Yolo" + e.getMessage());
+        } catch (Exception e) {
+            throw new Exception("Yolo2" + e.getClass() + e.toString());
+        }
+        
+
+        TraceManager.traceMessage("Settings registered.");
 
         // Create jCoServer object
-        this.jCoServer = JCoServerFactory
-                .getServer(serverDataProvider.getServerProperties("").getProperty(ServerDataProvider.JCO_PROGID));
+        this.jCoServer = JCoServerFactory.getServer(serverName);
 
         // Add generic Function handler
         TraceManager.traceMessage("Adding handlers and listeners.");
@@ -162,7 +168,13 @@ public class SAPServer implements JCoServerErrorListener,
         TraceManager.traceMessage("Handlers and listeners added.");
 
         // Start the server
-        jCoServer.start();
+        try {
+            jCoServer.start();            
+        } catch (Exception e) {
+            DestinationDataProviderImpl.deleteProperties(destinationName);
+            ServerDataProviderImpl.deleteProperties(serverName);
+            throw e;
+        }       
 
         TraceManager.traceMessage("Server started.");
     }
@@ -260,38 +272,17 @@ public class SAPServer implements JCoServerErrorListener,
         }
 
         while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         }
+
         TraceManager.traceMessage("SAP server stopped.");
 
-        TraceManager.traceMessage("Unregistering data providers.");
-        unregisterDataProviders();
+        TraceManager.traceMessage("Removing settings from data provider.");
 
-        while (Environment.isServerDataProviderRegistered() ||
-                Environment.isDestinationDataProviderRegistered()) {
-            Thread.sleep(1000);
-        }
+        DestinationDataProviderImpl.deleteProperties(destinationName);
+        ServerDataProviderImpl.deleteProperties(serverName);
 
-        SAPServer.serverDataProvider = null;
-        SAPServer.destinationDataProvider = null;
-
-        TraceManager.traceMessage("Data providers unregistered.");
-    }
-
-    /**
-     * Unregister data providers.
-     */
-    public void unregisterDataProviders() {
-        if (SAPServer.serverDataProvider != null) {
-            Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
-        }
-        if (SAPServer.destinationDataProvider != null) {
-            Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
-        }
-
-        destinationDataProvider = null;
-        serverDataProvider = null;
-
+        TraceManager.traceMessage("Settings removed.");
     }
 
     @Override

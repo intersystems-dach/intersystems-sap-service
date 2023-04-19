@@ -1,4 +1,4 @@
-package com.intersystems.dach.ens.sap.utils;
+package com.intersystems.dach.sap.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;

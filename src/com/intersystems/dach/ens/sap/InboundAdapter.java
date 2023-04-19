@@ -13,7 +13,6 @@ import com.intersystems.dach.ens.sap.testing.TestRunner;
 import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
-import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.SAPServer;
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
@@ -21,6 +20,7 @@ import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
+import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
@@ -182,7 +182,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
             LOGERROR("SAPService could not be started: " + e.getMessage());
-            sapServer.unregisterDataProviders();
             throw new RuntimeException();
         }
 
