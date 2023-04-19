@@ -33,11 +33,8 @@ public class ServerDataProviderImpl implements ServerDataProvider{
      * @return
      */
     public static boolean tryRegister() {
-        TraceManager.traceMessage("1");
         if (!Environment.isServerDataProviderRegistered()) {
-            TraceManager.traceMessage("2");
             if (singletonInstance == null) {
-                TraceManager.traceMessage("3");
                 singletonInstance = new ServerDataProviderImpl();
             }
             Environment.registerServerDataProvider(singletonInstance);
@@ -71,8 +68,6 @@ public class ServerDataProviderImpl implements ServerDataProvider{
      * @throws IllegalStateException thrown if data provider has not been initialized or properties for the specified server name aleady exist.
      */
     public static void setProperties(String serverName, Properties properties) throws IllegalStateException{
-        TraceManager.traceMessage("4");
-
         if (singletonInstance == null) {
             throw new IllegalStateException("ServerDataHandler is not initialized.");
         }
@@ -80,9 +75,7 @@ public class ServerDataProviderImpl implements ServerDataProvider{
         if (singletonInstance.serverProperties.containsKey(serverName)) {
             throw new IllegalStateException("Properties for server '" + serverName + "' already set.");
         }
-        TraceManager.traceMessage("5");
         singletonInstance.serverProperties.put(serverName, properties);
-        TraceManager.traceMessage("6");
         if (singletonInstance.serverDataEventListener != null) {
             singletonInstance.serverDataEventListener.updated(serverName);
         }

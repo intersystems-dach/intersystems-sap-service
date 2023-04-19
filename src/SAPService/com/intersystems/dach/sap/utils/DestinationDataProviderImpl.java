@@ -29,13 +29,6 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
 
     // Make this a singleton class
     private DestinationDataProviderImpl() { }
-
-    private static DestinationDataProviderImpl getInstance() {
-        if (singletonInstance == null) {
-            singletonInstance = new DestinationDataProviderImpl();
-        }
-        return singletonInstance;
-    }
     
     /**
      * Registers the destination data handler instance with the SAP JCo environment.
@@ -43,7 +36,10 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
      */
     public static boolean tryRegister() {
         if (!Environment.isDestinationDataProviderRegistered()) {
-            Environment.registerDestinationDataProvider(getInstance());
+            if (singletonInstance == null) {
+                singletonInstance = new DestinationDataProviderImpl();
+            }
+            Environment.registerDestinationDataProvider(singletonInstance);
             return true;
         } else {
             return false;
@@ -55,8 +51,8 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
      * @return True if the handler was unregistered, false if not.
      */
     public static boolean unregister() {
-        if (Environment.isDestinationDataProviderRegistered()) {
-            Environment.unregisterDestinationDataProvider(getInstance());
+        if (Environment.isDestinationDataProviderRegistered() && singletonInstance != null) {
+            Environment.unregisterDestinationDataProvider(singletonInstance);
 
             while (Environment.isDestinationDataProviderRegistered()) {
                 try {
@@ -81,14 +77,14 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
         }
 
         TraceManager.traceMessage("a");
-        if (getInstance().destinationProperties.containsKey(destinationName)) {
+        if (singletonInstance.destinationProperties.containsKey(destinationName)) {
             throw new IllegalStateException("Properties for destination '" + destinationName + "' already set.");
         }
         TraceManager.traceMessage("b");
-        getInstance().destinationProperties.put(destinationName, properties);
+        singletonInstance.destinationProperties.put(destinationName, properties);
         TraceManager.traceMessage("c");
-        if (getInstance().destinationDataEventListener != null) {
-            getInstance().destinationDataEventListener.updated(destinationName);
+        if (singletonInstance.destinationDataEventListener != null) {
+            singletonInstance.destinationDataEventListener.updated(destinationName);
         }
     }
 
@@ -103,11 +99,11 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
             throw new IllegalStateException("DestionationDataHandler is not initialized.");
         }
 
-        Properties properties = getInstance().destinationProperties.remove(destinationName);
-        if (getInstance().destinationDataEventListener != null) {
-            getInstance().destinationDataEventListener.deleted(destinationName);
+        Properties properties = singletonInstance.destinationProperties.remove(destinationName);
+        if (singletonInstance.destinationDataEventListener != null) {
+            singletonInstance.destinationDataEventListener.deleted(destinationName);
         }
-        if (getInstance().destinationProperties.isEmpty()) {
+        if (singletonInstance.destinationProperties.isEmpty()) {
             unregister();
         }
 
