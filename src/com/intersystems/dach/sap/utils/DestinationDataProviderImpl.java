@@ -26,15 +26,19 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
     private HashMap<String,Properties> destinationProperties = new HashMap<String, Properties>();
     private DestinationDataEventListener destinationDataEventListener = null;
 
-
     // Make this a singleton class
     private DestinationDataProviderImpl() { }
 
     // Register this data provider in the static block
     static {
         if (!Environment.isDestinationDataProviderRegistered()) {
-            singletonInstance = new DestinationDataProviderImpl();
-            Environment.registerDestinationDataProvider(singletonInstance);
+            try {
+                singletonInstance = new DestinationDataProviderImpl();
+                Environment.registerDestinationDataProvider(singletonInstance);
+            } catch (Exception e) {
+                // Disable Data provider by setting instance to null
+                singletonInstance = null;
+            }            
         }
     }
 

@@ -31,8 +31,13 @@ public class ServerDataProviderImpl implements ServerDataProvider{
     // Register this data provider in the static block
     static {
         if (!Environment.isServerDataProviderRegistered()) {
-            singletonInstance = new ServerDataProviderImpl();
-            Environment.registerServerDataProvider(singletonInstance);
+            try {
+                singletonInstance = new ServerDataProviderImpl();
+                Environment.registerServerDataProvider(singletonInstance);
+            } catch (Exception e) {
+                // Disable Data provider by setting instance to null
+                singletonInstance = null;
+            }
         }
     }
 

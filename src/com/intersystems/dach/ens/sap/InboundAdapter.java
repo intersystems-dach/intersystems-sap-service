@@ -20,9 +20,9 @@ import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
-import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
+import com.intersystems.dach.utils.TraceManager;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
@@ -129,6 +129,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private IRIS iris;
     private SAPServer sapServer;
     private IRISXSDSchemaImporter irisSchemaImporter;
+    private Object traceManagerHandle;
 
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
@@ -139,11 +140,13 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void OnInit() throws Exception {
+        traceManagerHandle = new Object();
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
             traceBuffer = new ConcurrentLinkedQueue<String>();
-            TraceManager.registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+            TraceManager.getTraceManager(traceManagerHandle)
+                    .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
         }
 
         // get iris instance
@@ -167,14 +170,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
-            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
+            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, this.traceManagerHandle);
             LOGINFO("XSD directory: " + irisSchemaImporter.getXsdDirectoryPath());
         }
 
         // Prepare SAP JCo server
         try {
             Properties settings = this.generateSettingsProperties();
-            sapServer = new SAPServer(settings, this.UseJSON);
+            sapServer = new SAPServer(settings, this.UseJSON, traceManagerHandle);
             sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
@@ -193,13 +196,16 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
     }
 
-    @Override
-    public void OnTask() throws Exception {
+    /**
+     * // Handle trace and errors messages and exceptions.
+     * @return True if an error or exception occured, false if not.
+     */
+    private boolean HandleMessages() {
         // Handle trace, errors and exceptions
         if (traceBuffer != null) {
-            while(traceBuffer.size() > 0) {
+            while (traceBuffer.size() > 0) {
                 String traceMsg = traceBuffer.poll();
-                LOGINFO("##TRACE## " +traceMsg);
+                LOGINFO("## " + traceMsg);
             }
         }
 
@@ -217,7 +223,13 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             errorOrExceptionOccured = true;
         }
 
-        if (errorOrExceptionOccured) {
+        return errorOrExceptionOccured;
+
+    }
+
+    @Override
+    public void OnTask() throws Exception {
+        if (HandleMessages()) {
             throw new RuntimeException();
         }
 
@@ -229,7 +241,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 LOGINFO("Back to normal load.");
                 warningActiveFlag = false;
             }
-            
+
             return;
         }
 
@@ -273,12 +285,11 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         if (this.EnableTracing) {
             if (importDataQueue.isEmpty()) {
-                this.LOGINFO("##TRACE## No data in queue, wait for next call intervall.");
+                this.LOGINFO("## No data in queue, wait for next call intervall.");
             } else {
-                this.LOGINFO("##TRACE## Data in queue, call OnProcessInput again.");
+                this.LOGINFO("## Data in queue, call OnProcessInput again.");
             }
         }
-       
 
     }
 
@@ -290,6 +301,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         } catch (Exception e) {
             LOGERROR("An exception occured during stop of the server: " + e.getMessage());
         }
+
+        HandleMessages();
 
         // Close iris connection
         GatewayContext.getIRIS().close();
@@ -336,7 +349,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager.traceMessage("SAP server state changed from " +
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("SAP server state changed from " +
                 oldState.toString() + " to " + newState.toString());
     }
 

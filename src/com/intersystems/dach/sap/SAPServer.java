@@ -12,7 +12,7 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
-import com.intersystems.dach.sap.utils.TraceManager;
+import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;
@@ -40,13 +40,9 @@ public class SAPServer implements JCoServerErrorListener,
 
     private String serverName;
     private String destinationName;
-
     private JCoServer jCoServer;
-
     private boolean useJson;
-
     private int confirmationTimeoutMs = 20000;
-
     private Properties settings;
 
     // Event handlers
@@ -55,24 +51,17 @@ public class SAPServer implements JCoServerErrorListener,
     private Collection<SAPServerExceptionHandler> exceptionHandlers;
     private Collection<SAPServerStateHandler> stateHandlers;
 
-    /**
-     * Initializes the server in XML mode.
-     * 
-     * @param settings          SAP server settings.
-     * @param importDataHandler Import data handler.
-     */
-    public SAPServer(Properties settings) {
-        this(settings, false);
-    }
+    // Tracing
+    private Object traceManagerHandle;
 
     /**
      * Initializes the server.
      * 
-     * @param settingsProvider  SAP server settings provider.
-     * @param importDataHandler Import data handler.
-     * @param useJson           Use JSON format instead of XML format.
+     * @param settingsProvider   SAP server settings provider.
+     * @param useJson            Use JSON format instead of XML format.
+     * @param traceManagerHandle Trace Manager handle
      */
-    public SAPServer(Properties settings, boolean useJson) {
+    public SAPServer(Properties settings, boolean useJson, Object traceManagerHandle) {
         // Create handler lists
         this.errorHandlers = new ArrayList<SAPServerErrorHandler>();
         this.exceptionHandlers = new ArrayList<SAPServerExceptionHandler>();
@@ -82,6 +71,8 @@ public class SAPServer implements JCoServerErrorListener,
 
         this.jCoServer = null;
         this.useJson = useJson;
+
+        this.traceManagerHandle = traceManagerHandle;
     }
 
     /**
@@ -105,7 +96,7 @@ public class SAPServer implements JCoServerErrorListener,
      * @throws Exception if SAP server can't be started.
      */
     public void start() throws Exception {
-        TraceManager.traceMessage("Starting SAP server.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Starting SAP server.");
 
         // Pre checks
         if (importDataHandler == null) {
@@ -122,9 +113,9 @@ public class SAPServer implements JCoServerErrorListener,
             }
             sb.append(e);
         }
-        TraceManager.traceMessage("Settings: " + sb.toString());
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Settings: " + sb.toString());
 
-        TraceManager.traceMessage("Registering settings with data provider.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Registering settings with data provider.");
 
         // Set server and destination name
         serverName = settings.getProperty(ServerDataProvider.JCO_PROGID);
@@ -132,24 +123,23 @@ public class SAPServer implements JCoServerErrorListener,
 
         try {
             DestinationDataProviderImpl.setProperties(destinationName, settings);
-            ServerDataProviderImpl.setProperties(serverName, settings);  
+            ServerDataProviderImpl.setProperties(serverName, settings);
         } catch (IllegalStateException e) {
             throw new Exception("Yolo" + e.getMessage());
         } catch (Exception e) {
             throw new Exception("Yolo2" + e.getClass() + e.toString());
         }
-        
 
-        TraceManager.traceMessage("Settings registered.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Settings registered.");
 
         // Create jCoServer object
         this.jCoServer = JCoServerFactory.getServer(serverName);
 
         // Add generic Function handler
-        TraceManager.traceMessage("Adding handlers and listeners.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Adding handlers and listeners.");
         DefaultServerHandlerFactory.FunctionHandlerFactory factory = new DefaultServerHandlerFactory.FunctionHandlerFactory();
-        factory.registerGenericHandler(
-                new JCoServerFunctionHandlerImpl(importDataHandler, useJson, confirmationTimeoutMs));
+        factory.registerGenericHandler(new JCoServerFunctionHandlerImpl(
+                importDataHandler, useJson, confirmationTimeoutMs, traceManagerHandle));
         jCoServer.setCallHandlerFactory(factory);
 
         // Add TID handler
@@ -161,18 +151,18 @@ public class SAPServer implements JCoServerErrorListener,
         jCoServer.addServerExceptionListener(this);
         jCoServer.addServerStateChangedListener(this);
 
-        TraceManager.traceMessage("Handlers and listeners added.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Handlers and listeners added.");
 
         // Start the server
         try {
-            jCoServer.start();            
+            jCoServer.start();
         } catch (Exception e) {
             DestinationDataProviderImpl.deleteProperties(destinationName);
             ServerDataProviderImpl.deleteProperties(serverName);
             throw e;
-        }       
+        }
 
-        TraceManager.traceMessage("Server started.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Server started.");
     }
 
     /**
@@ -261,7 +251,7 @@ public class SAPServer implements JCoServerErrorListener,
      * @throws Exception if server can't be stopped.
      */
     public void stop() throws Exception {
-        TraceManager.traceMessage("Stopping SAP server.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Stopping SAP server.");
 
         if (jCoServer != null) {
             jCoServer.stop();
@@ -271,14 +261,14 @@ public class SAPServer implements JCoServerErrorListener,
             Thread.sleep(500);
         }
 
-        TraceManager.traceMessage("SAP server stopped.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("SAP server stopped.");
 
-        TraceManager.traceMessage("Removing settings from data provider.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Removing settings from data provider.");
 
         DestinationDataProviderImpl.deleteProperties(destinationName);
         ServerDataProviderImpl.deleteProperties(serverName);
 
-        TraceManager.traceMessage("Settings removed.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Settings removed.");
     }
 
     @Override

@@ -3,9 +3,9 @@ package com.intersystems.dach.sap.handlers;
 import javax.naming.TimeLimitExceededException;
 
 import com.intersystems.dach.sap.SAPImportData;
-import com.intersystems.dach.sap.utils.TraceManager;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDUtils;
+import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.AbapClassException;
 import com.sap.conn.jco.AbapException;
 import com.sap.conn.jco.JCoFunction;
@@ -26,8 +26,8 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
 
     // The callback function to call
     private final SAPServerImportDataHandler importDataHandler;
-
     private long confirmationTimeoutMs;
+    private Object traceManagerHandle;
 
     /**
      * Create a new generic function handler that will call the callback function
@@ -36,10 +36,11 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * @param callback The callback function to call
      */
     public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, boolean useJson,
-            long confirmationTimeoutMs) {
+            long confirmationTimeoutMs, Object traceManagerHandle) {
         this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.importDataHandler = importDataHandler;
         this.useJson = useJson;
+        this.traceManagerHandle = traceManagerHandle;
     }
 
     @Override
@@ -49,27 +50,27 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
         String data = null;
         String schema = null;
 
-        TraceManager.traceMessage("Handle request by function '" + functionName + "'.");
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Handle request by function '" + functionName + "'.");
 
         if (useJson) {
             data = function.getImportParameterList().toJSON();
         } else {
             try {
                 String importParameterXML = function.getImportParameterList().toXML();
-                TraceManager.traceMessage("ImportParameter: " + importParameterXML);
-                TraceManager.traceMessage("Convertig to XML...");
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("ImportParameter: " + importParameterXML);
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("Convertig to XML...");
                 data = XMLUtils.convert(importParameterXML, functionName);
-                TraceManager.traceMessage("XML data: " + data);
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("XML data: " + data);
             } catch (Exception e) {
-                TraceManager.traceMessage("Could not convert import parameters to XML: " + e.getMessage());
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("Could not convert import parameters to XML: " + e.getMessage());
                 throw new AbapClassException(e);
             }
             try {
-                TraceManager.traceMessage("Generating XSD schema...");
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("Generating XSD schema...");
                 schema = XSDUtils.createXSDString(function, true, false);
-                TraceManager.traceMessage("XSD data: " + schema);
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage("XSD data: " + schema);
             } catch (Exception e) {
-                TraceManager.traceMessage(
+                TraceManager.getTraceManager(traceManagerHandle).traceMessage(
                         "Could not create XSD schema for function '" + functionName + "': " + e.getMessage());
             }
         }
@@ -77,14 +78,14 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
             // call the import data handler function
             SAPImportData importData = new SAPImportData(functionName, data, useJson, schema);
 
-            TraceManager.traceMessage("Calling import data receiver handler.");
+            TraceManager.getTraceManager(traceManagerHandle).traceMessage("Calling import data receiver handler.");
             importDataHandler.onImportDataReceived(importData);
 
-            TraceManager.traceMessage("Waiting for confirmation for message with ID " + importData.getID() + ".");
+            TraceManager.getTraceManager(traceManagerHandle).traceMessage("Waiting for confirmation for message with ID " + importData.getID() + ".");
 
             importData.waitForConfirmation(confirmationTimeoutMs);
 
-            TraceManager.traceMessage("Confirmation received for message with ID " + importData.getID() + ".");
+            TraceManager.getTraceManager(traceManagerHandle).traceMessage("Confirmation received for message with ID " + importData.getID() + ".");
         } catch (TimeLimitExceededException e) {
             throw new AbapException("SYSTEM_FAILURE", "Confirmation Timeout. InputData wasn't handled in time.");
         } catch (Exception e) {
