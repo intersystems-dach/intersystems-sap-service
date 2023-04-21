@@ -130,23 +130,32 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private SAPServer sapServer;
     private IRISXSDSchemaImporter irisSchemaImporter;
     private Object traceManagerHandle;
+    private Object warningTraceManagerHandle;
 
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
     private Queue<Exception> exceptionBuffer;
     private Queue<String> traceBuffer;
+    private Queue<String> warningTraceBuffer;
 
     private boolean warningActiveFlag = false;
 
     @Override
     public void OnInit() throws Exception {
         traceManagerHandle = new Object();
+        warningTraceManagerHandle = new Object();
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
             traceBuffer = new ConcurrentLinkedQueue<String>();
             TraceManager.getTraceManager(traceManagerHandle)
                     .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+
+            // TODO only enable with traces?
+            warningTraceBuffer = new ConcurrentLinkedQueue<String>();
+            TraceManager.getTraceManager(
+                    warningTraceManagerHandle)
+                    .registerTraceMsgHandler((warningTraceMsg) -> warningTraceBuffer.add(warningTraceMsg));
         }
 
         // get iris instance
@@ -198,26 +207,32 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     /**
      * // Handle trace and errors messages and exceptions.
+     * 
      * @return True if an error or exception occured, false if not.
      */
     private boolean handleMessages() {
         // Handle trace, errors and exceptions
         if (traceBuffer != null) {
-            while (traceBuffer.size() > 0) {
-                String traceMsg = traceBuffer.poll();
-                LOGINFO("## " + traceMsg);
+            while (!traceBuffer.isEmpty()) {
+                LOGINFO("## " + traceBuffer.poll());
+            }
+        }
+
+        if (warningTraceBuffer != null) {
+            while (!warningTraceBuffer.isEmpty()) {
+                LOGWARNING(warningTraceBuffer.poll());
             }
         }
 
         boolean errorOrExceptionOccured = false;
 
-        while (exceptionBuffer.size() > 0) {
+        while (!exceptionBuffer.isEmpty()) {
             Exception e = exceptionBuffer.poll();
             LOGERROR("An exception occured in SAP server: " + e.getMessage());
             errorOrExceptionOccured = true;
         }
 
-        while (errorBuffer.size() > 0) {
+        while (!errorBuffer.isEmpty()) {
             Error err = errorBuffer.poll();
             LOGERROR("An error occured in SAP server: " + err.getMessage());
             errorOrExceptionOccured = true;

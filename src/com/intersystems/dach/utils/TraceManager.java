@@ -13,7 +13,7 @@ import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
  * @version 1.0
  */
 public final class TraceManager {
-    private static HashMap<Object ,TraceManager> instances = new HashMap<Object, TraceManager>();
+    private static HashMap<Object, TraceManager> instances = new HashMap<Object, TraceManager>();
 
     private Collection<SAPServerTraceMsgHandler> traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
 
@@ -26,7 +26,8 @@ public final class TraceManager {
     }
 
     // make this class static
-    private TraceManager() {}
+    private TraceManager() {
+    }
 
     /**
      * Register a trace message handler.

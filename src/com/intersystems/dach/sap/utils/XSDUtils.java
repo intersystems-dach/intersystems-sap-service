@@ -205,12 +205,11 @@ public final class XSDUtils {
             root = sequenceItem;
         }
 
-        // TODO could throw exception
-        /*
-         * if (table.isEmpty()) {
-         * return;
-         * }
-         */
+        // TODO
+        if (table.isEmpty()) {
+
+            return;
+        }
 
         JCoMetaData tableMetadata = table.getMetaData();
         for (int i = 0; i < tableMetadata.getFieldCount(); i++) {
