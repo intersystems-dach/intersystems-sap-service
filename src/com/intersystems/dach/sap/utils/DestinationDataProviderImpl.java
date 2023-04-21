@@ -38,7 +38,7 @@ public final class DestinationDataProviderImpl implements DestinationDataProvide
             } catch (Exception e) {
                 // Disable Data provider by setting instance to null
                 singletonInstance = null;
-            }            
+            }
         }
     }
 

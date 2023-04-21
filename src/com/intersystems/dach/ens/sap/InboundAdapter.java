@@ -200,7 +200,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
      * // Handle trace and errors messages and exceptions.
      * @return True if an error or exception occured, false if not.
      */
-    private boolean HandleMessages() {
+    private boolean handleMessages() {
         // Handle trace, errors and exceptions
         if (traceBuffer != null) {
             while (traceBuffer.size() > 0) {
@@ -229,11 +229,12 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void OnTask() throws Exception {
-        if (HandleMessages()) {
-            throw new RuntimeException();
-        }
 
         if (importDataQueue.isEmpty()) {
+            if (handleMessages()) {
+                throw new RuntimeException();
+            }
+
             // No data in queue, wait for next call intervall
             BusinessHost.irisHandle.set("%WaitForNextCallInterval", true);
             // Reset warning flag
@@ -277,6 +278,10 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         BusinessHost.ProcessInput(irisObject);
         importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
+        if (handleMessages()) {
+            throw new RuntimeException();
+        }
+
         /*
          * Wait for next call intervall if queue is empty or call
          * OnProcessInput immediately again.
@@ -290,7 +295,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 this.LOGINFO("## Data in queue, call OnProcessInput again.");
             }
         }
-
     }
 
     @Override
@@ -302,7 +306,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGERROR("An exception occured during stop of the server: " + e.getMessage());
         }
 
-        HandleMessages();
+        handleMessages();
 
         // Close iris connection
         GatewayContext.getIRIS().close();
