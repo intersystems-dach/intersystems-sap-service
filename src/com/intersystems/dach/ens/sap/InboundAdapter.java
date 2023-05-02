@@ -144,9 +144,11 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     public void OnInit() throws Exception {
         traceManagerHandle = new Object();
         warningTraceManagerHandle = new Object();
+
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
+            LOGINFO(ProgrammID + ": " + ProcessHandle.current().pid());
             traceBuffer = new ConcurrentLinkedQueue<String>();
             TraceManager.getTraceManager(traceManagerHandle)
                     .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
@@ -196,6 +198,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
             LOGERROR("SAPService could not be started: " + e.getMessage());
+            sapServer.deleteDataProviders();
+            handleMessages();
             throw new RuntimeException();
         }
 
@@ -206,7 +210,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     }
 
     /**
-     * // Handle trace and errors messages and exceptions.
+     * Handle trace and errors messages and exceptions.
      * 
      * @return True if an error or exception occured, false if not.
      */
@@ -247,6 +251,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         if (importDataQueue.isEmpty()) {
             if (handleMessages()) {
+                sapServer.deleteDataProviders();
+                handleMessages();
                 throw new RuntimeException();
             }
 
@@ -294,6 +300,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
         if (handleMessages()) {
+            sapServer.deleteDataProviders();
+            handleMessages();
             throw new RuntimeException();
         }
 
@@ -315,6 +323,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @Override
     public void OnTearDown() throws Exception {
         try {
+            LOGINFO("Start SAPService stopped");
             sapServer.stop();
             LOGINFO("SAPService stopped");
         } catch (Exception e) {
@@ -380,6 +389,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
      */
     public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
         _dispatchOnInit(hostObject);
+    }
+
+    /**
+     * This is a workaround to handle a bug in IRIS < 2022.1
+     */
+    public void _setIrisHandles(com.intersystems.jdbc.IRISObject handleCurrent,
+            com.intersystems.jdbc.IRISObject handlePartner) {
+        setIrisHandles(handleCurrent, handlePartner);
     }
 
     /**

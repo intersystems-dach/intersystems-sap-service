@@ -157,8 +157,7 @@ public class SAPServer implements JCoServerErrorListener,
         try {
             jCoServer.start();
         } catch (Exception e) {
-            DestinationDataProviderImpl.deleteProperties(destinationName);
-            ServerDataProviderImpl.deleteProperties(serverName);
+            deleteDataProviders();
             throw e;
         }
 
@@ -255,20 +254,23 @@ public class SAPServer implements JCoServerErrorListener,
 
         if (jCoServer != null) {
             jCoServer.stop();
-        }
 
-        while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
-            Thread.sleep(500);
+            while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
+                Thread.sleep(500);
+            }
         }
 
         TraceManager.getTraceManager(traceManagerHandle).traceMessage("SAP server stopped.");
 
-        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Removing settings from data provider.");
-
-        DestinationDataProviderImpl.deleteProperties(destinationName);
-        ServerDataProviderImpl.deleteProperties(serverName);
+        deleteDataProviders();
 
         TraceManager.getTraceManager(traceManagerHandle).traceMessage("Settings removed.");
+    }
+
+    public void deleteDataProviders() {
+        TraceManager.getTraceManager(traceManagerHandle).traceMessage("Removing settings from data provider.");
+        DestinationDataProviderImpl.deleteProperties(destinationName);
+        ServerDataProviderImpl.deleteProperties(serverName);
     }
 
     @Override
