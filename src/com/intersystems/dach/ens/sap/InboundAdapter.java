@@ -20,8 +20,7 @@ import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
-import com.intersystems.dach.sap.utils.XMLUtils;
-import com.intersystems.dach.sap.utils.XSDUtils;
+import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
@@ -129,8 +128,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private IRIS iris;
     private SAPServer sapServer;
     private IRISXSDSchemaImporter irisSchemaImporter;
-    private Object traceManagerHandle;
-    private Object warningTraceManagerHandle;
+
+    private ObjectProvider objectProvider;
 
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
@@ -142,21 +141,29 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void OnInit() throws Exception {
-        traceManagerHandle = new Object();
-        warningTraceManagerHandle = new Object();
+
+        objectProvider = new ObjectProvider();
+        objectProvider.setFlattenTablesItems(this.FlattenTablesItems);
+        objectProvider.setTraceManagerHandle(new Object());
+        objectProvider.setWarningTraceManagerHandle(new Object());
+        objectProvider.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
+        objectProvider.setUseJson(this.UseJSON);
 
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
-            LOGINFO(ProgrammID + ": " + ProcessHandle.current().pid());
+
             traceBuffer = new ConcurrentLinkedQueue<String>();
-            TraceManager.getTraceManager(traceManagerHandle)
+            TraceManager.getTraceManager(objectProvider.getTraceManagerHandle())
+                    .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+
+            // Secure if forgot to rewrite code with the trace handler
+            TraceManager.getTraceManager(objectProvider)
                     .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
 
             // TODO only enable with traces?
             warningTraceBuffer = new ConcurrentLinkedQueue<String>();
-            TraceManager.getTraceManager(
-                    warningTraceManagerHandle)
+            TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle())
                     .registerTraceMsgHandler((warningTraceMsg) -> warningTraceBuffer.add(warningTraceMsg));
         }
 
@@ -166,9 +173,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // print format
         LOGINFO((UseJSON ? "JSON" : "XML") + " is enabled.");
 
-        // Prepare XMLUtils and XSDUtils
-        XMLUtils.setFlattenTablesItems(FlattenTablesItems);
-        XSDUtils.setFlattenTablesItems(FlattenTablesItems);
         if (FlattenTablesItems) {
             LOGINFO("FlattenTablesItems is enabled.");
         }
@@ -181,19 +185,18 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
-            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, this.traceManagerHandle);
+            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, objectProvider);
             LOGINFO("XSD directory: " + irisSchemaImporter.getXsdDirectoryPath());
         }
 
         // Prepare SAP JCo server
         try {
             Properties settings = this.generateSettingsProperties();
-            sapServer = new SAPServer(settings, this.UseJSON, traceManagerHandle);
+            sapServer = new SAPServer(settings, objectProvider);
             sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
             sapServer.registerStateHandler(this);
-            sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
             sapServer.start();
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
@@ -224,7 +227,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         if (warningTraceBuffer != null) {
             while (!warningTraceBuffer.isEmpty()) {
-                LOGWARNING(warningTraceBuffer.poll());
+                LOGWARNING("## " + warningTraceBuffer.poll());
             }
         }
 
@@ -323,7 +326,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @Override
     public void OnTearDown() throws Exception {
         try {
-            LOGINFO("Start SAPService stopped");
             sapServer.stop();
             LOGINFO("SAPService stopped");
         } catch (Exception e) {
@@ -377,8 +379,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager.getTraceManager(traceManagerHandle).traceMessage("SAP server state changed from " +
-                oldState.toString() + " to " + newState.toString());
+        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle())
+                .traceMessage("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
     }
 
     /**

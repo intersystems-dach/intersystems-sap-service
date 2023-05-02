@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
@@ -27,18 +28,17 @@ public class IRISXSDSchemaImporter {
     private Path xsdDirectoryPath = null;
     private Collection<String> knownSchemas = null;
     private boolean structureCreated;
-    private Object traceManageHandle;
+    private ObjectProvider objectProvider;
 
-    public IRISXSDSchemaImporter(String xsdDirectoryPath, Object traceManageHandle) throws IOException {
+    public IRISXSDSchemaImporter(String xsdDirectoryPath, ObjectProvider objectProvider) throws IOException {
         this.knownSchemas = new ArrayList<String>();
         this.structureCreated = false;
-        this.traceManageHandle = traceManageHandle;
+        this.objectProvider = objectProvider;
 
         Path baseDirPath = Paths.get(xsdDirectoryPath);
         if (!Files.exists(baseDirPath)) {
             Files.createDirectories(baseDirPath);
-            TraceManager.getTraceManager(traceManageHandle)
-                    .traceMessage("Created base directory: " + baseDirPath.toString());
+            trace("Created base directory: " + baseDirPath.toString());
         } else if (!Files.isWritable(baseDirPath)) {
             throw new IOException("Path is not a writeable: " + baseDirPath);
         }
@@ -90,8 +90,7 @@ public class IRISXSDSchemaImporter {
         if (!this.structureCreated) {
             Files.createDirectory(xsdDirectoryPath);
             this.structureCreated = true;
-            TraceManager.getTraceManager(traceManageHandle)
-                    .traceMessage("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
+            trace("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
         }
 
         // Write schema to file
@@ -100,8 +99,7 @@ public class IRISXSDSchemaImporter {
         FileWriter writer = new FileWriter(file);
         writer.write(xsdSchema);
         writer.close();
-        TraceManager.getTraceManager(traceManageHandle)
-                .traceMessage("Writing XSD schema to file: " + schemaId + ".xsd");
+        trace("Writing XSD schema to file: " + schemaId + ".xsd");
 
         // Import schema to iris
         IRIS iris = GatewayContext.getIRIS();
@@ -110,10 +108,18 @@ public class IRISXSDSchemaImporter {
         }
         iris.classMethodStatusCode("EnsLib.EDI.XML.SchemaXSD", "Import", xsdFilePath.toString());
 
-        TraceManager.getTraceManager(traceManageHandle)
-                .traceMessage("Imported XSD schema to IRIS: " + schemaId + ".xsd");
+        trace("Imported XSD schema to IRIS: " + schemaId + ".xsd");
 
         knownSchemas.add(schemaId);
         return true;
+    }
+
+    /**
+     * Trace a message.
+     * 
+     * @param msg The message to trace
+     */
+    private void trace(String msg) {
+        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle()).traceMessage(msg);
     }
 }

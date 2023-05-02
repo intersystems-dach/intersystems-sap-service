@@ -22,6 +22,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.intersystems.dach.utils.ObjectProvider;
+
 /**
  * A class to parse XML
  * 
@@ -29,12 +31,12 @@ import org.xml.sax.SAXException;
  * @version 1.0
  * 
  */
-public final class XMLUtils {
+public class XMLUtils {
 
-    private static boolean FlattenTablesItems = false;
+    private ObjectProvider objectProvider;
 
-    // make this a static class
-    private XMLUtils() {
+    public XMLUtils(ObjectProvider objectProvider) {
+        this.objectProvider = objectProvider;
     }
 
     // XML namespace and header
@@ -52,7 +54,7 @@ public final class XMLUtils {
      * @throws IOException
      * @throws TransformerException
      */
-    public static String convert(String xml, String functionName)
+    public String convert(String xml, String functionName)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
         // get document
         Document doc = convertStringToXMLDocument(xml);
@@ -66,7 +68,7 @@ public final class XMLUtils {
         doc.insertBefore(doc.createProcessingInstruction("xml", XMLHEADER),
                 doc.getFirstChild());
 
-        if (XMLUtils.FlattenTablesItems) {
+        if (objectProvider.isFlattenTablesItems()) {
             List<Node> nodesToRemove = new ArrayList<Node>();
             replaceItem(doc.getDocumentElement(), doc, nodesToRemove);
 
@@ -87,7 +89,7 @@ public final class XMLUtils {
      * @throws SAXException
      * @throws IOException
      */
-    private static Document convertStringToXMLDocument(String xmlString)
+    private Document convertStringToXMLDocument(String xmlString)
             throws ParserConfigurationException, SAXException, IOException {
         // Parser that produces DOM object trees from XML content
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -109,7 +111,7 @@ public final class XMLUtils {
      * @return XML in String format
      * @throws TransformerException
      */
-    private static String convertXMLDocumentToString(Document doc) throws TransformerException {
+    private String convertXMLDocumentToString(Document doc) throws TransformerException {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
@@ -126,7 +128,7 @@ public final class XMLUtils {
      * @param doc         - XML Document
      * @param removeNodes - list of nodes to remove later
      */
-    private static void replaceItem(Node node, Document doc, List<Node> removeNodes) {
+    private void replaceItem(Node node, Document doc, List<Node> removeNodes) {
 
         if (node.getNodeName().equals("item")) {
             // rename item to parent node name
@@ -153,7 +155,7 @@ public final class XMLUtils {
      * 
      * @param nodesToRemove - list of nodes to remove
      */
-    private static void removeNodes(List<Node> nodesToRemove) {
+    private void removeNodes(List<Node> nodesToRemove) {
         if (nodesToRemove.isEmpty()) {
             return;
         }
@@ -191,15 +193,6 @@ public final class XMLUtils {
      */
     public static String getXmlnamespace() {
         return XMLNAMESPACE;
-    }
-
-    /**
-     * Set the flag to flatten tables items
-     * 
-     * @param flattenTablesItems - flag to flatten tables items
-     */
-    public static void setFlattenTablesItems(boolean flattenTablesItems) {
-        XMLUtils.FlattenTablesItems = flattenTablesItems;
     }
 
 }
