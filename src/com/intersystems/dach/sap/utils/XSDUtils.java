@@ -20,7 +20,7 @@ import java.io.StringWriter;
 import java.util.Hashtable;
 import java.util.Map;
 
-import com.intersystems.dach.utils.ObjectProvider;
+import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.JCoMetaData;
@@ -39,14 +39,17 @@ import com.sap.conn.jco.JCoTable;
 
 public class XSDUtils {
 
-    // TODO make this static??
-    // should there be one cache for all instances?
-    private static Map<String, String> schemaCache = new Hashtable<String, String>();
+    private Map<String, XSDSchema> schemaCache;
 
-    private ObjectProvider objectProvider;
+    private SAPServerArgs sapServerArgs;
 
-    public XSDUtils(ObjectProvider objectProvider) {
-        this.objectProvider = objectProvider;
+    private Map<Document, Boolean> documentStatusMap;
+
+    public XSDUtils(SAPServerArgs sapServerArgs) {
+        this.sapServerArgs = sapServerArgs;
+        this.schemaCache = new Hashtable<String, XSDSchema>();
+        this.documentStatusMap = new Hashtable<Document, Boolean>();
+
     }
 
     /**
@@ -62,7 +65,7 @@ public class XSDUtils {
      * @throws IOException
      * @throws TransformerException
      */
-    public String createXSDString(JCoFunction function, boolean isImportParameter, boolean force)
+    public XSDSchema createXSD(JCoFunction function, boolean isImportParameter, boolean force)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
         if (!force && schemaCache.containsKey(function.getName())) {
@@ -70,13 +73,15 @@ public class XSDUtils {
         }
 
         Document doc = createXSDDocument(function, isImportParameter);
+        this.documentStatusMap.put(doc, true);
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         StringWriter stringWriter = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(stringWriter));
         String xsdString = stringWriter.toString();
-        schemaCache.put(function.getName(), xsdString);
-        return xsdString;
+        XSDSchema xsdSchema = new XSDSchema(xsdString, documentStatusMap.remove(doc));
+        schemaCache.put(function.getName(), xsdSchema);
+        return xsdSchema;
     }
 
     /**
@@ -91,7 +96,7 @@ public class XSDUtils {
      * @throws IOException
      * @throws TransformerException
      */
-    public Document createXSDDocument(JCoFunction function, boolean isImportParameter)
+    private Document createXSDDocument(JCoFunction function, boolean isImportParameter)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
         // create the XSD document
@@ -191,7 +196,7 @@ public class XSDUtils {
         root = sequence;
 
         // add item element
-        if (!objectProvider.isFlattenTablesItems()) {
+        if (!sapServerArgs.isFlattenTablesItems()) {
             Element itemElement = doc.createElement("xs:element");
             itemElement.setAttribute("name", "item");
             itemElement.setAttribute("maxOccurs", "unbounded");
@@ -216,13 +221,11 @@ public class XSDUtils {
             anyElement.setAttribute("maxOccurs", "unbounded");
             anyElement.setAttribute("minOccurs", "0");
 
-            // TODO is needed?
             anyElement.setAttribute("processContents", "skip");
 
             root.appendChild(anyElement);
-
-            TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle()).traceMessage(
-                    "Table " + name + " is empty, generic XSD element is used!");
+            documentStatusMap.put(doc, false);
+            sapServerArgs.getTraceManager().traceMessage("Table " + name + " is empty, generic XSD element is used!");
             return;
         }
 
@@ -335,7 +338,7 @@ public class XSDUtils {
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
-                if (objectProvider.isFlattenTablesItems()) {
+                if (sapServerArgs.isFlattenTablesItems()) {
                     element.setAttribute("maxOccurs", "unbounded");
                 }
 

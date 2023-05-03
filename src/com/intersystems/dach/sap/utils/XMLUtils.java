@@ -22,7 +22,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.intersystems.dach.utils.ObjectProvider;
+import com.intersystems.dach.sap.SAPServerArgs;
 
 /**
  * A class to parse XML
@@ -33,9 +33,9 @@ import com.intersystems.dach.utils.ObjectProvider;
  */
 public class XMLUtils {
 
-    private ObjectProvider objectProvider;
+    private SAPServerArgs objectProvider;
 
-    public XMLUtils(ObjectProvider objectProvider) {
+    public XMLUtils(SAPServerArgs objectProvider) {
         this.objectProvider = objectProvider;
     }
 

@@ -14,13 +14,13 @@ import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
 import com.intersystems.dach.sap.SAPServer;
+import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
-import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
@@ -129,8 +129,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private SAPServer sapServer;
     private IRISXSDSchemaImporter irisSchemaImporter;
 
-    private ObjectProvider objectProvider;
-
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
     private Queue<Exception> exceptionBuffer;
@@ -142,29 +140,20 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @Override
     public void OnInit() throws Exception {
 
-        objectProvider = new ObjectProvider();
-        objectProvider.setFlattenTablesItems(this.FlattenTablesItems);
-        objectProvider.setTraceManagerHandle(new Object());
-        objectProvider.setWarningTraceManagerHandle(new Object());
-        objectProvider.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
-        objectProvider.setUseJson(this.UseJSON);
-
+        TraceManager traceManager = new TraceManager();
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
-
             traceBuffer = new ConcurrentLinkedQueue<String>();
-            TraceManager.getTraceManager(objectProvider.getTraceManagerHandle())
-                    .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
-
-            // Secure if forgot to rewrite code with the trace handler
-            TraceManager.getTraceManager(objectProvider)
-                    .registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+            traceManager.registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
 
             // TODO only enable with traces?
-            warningTraceBuffer = new ConcurrentLinkedQueue<String>();
-            TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle())
-                    .registerTraceMsgHandler((warningTraceMsg) -> warningTraceBuffer.add(warningTraceMsg));
+            /*
+             * warningTraceBuffer = new ConcurrentLinkedQueue<String>();
+             * TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle())
+             * .registerTraceMsgHandler((warningTraceMsg) ->
+             * warningTraceBuffer.add(warningTraceMsg));
+             */
         }
 
         // get iris instance
@@ -185,14 +174,21 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
-            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, objectProvider);
+            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, traceManager);
             LOGINFO("XSD directory: " + irisSchemaImporter.getXsdDirectoryPath());
         }
 
         // Prepare SAP JCo server
         try {
             Properties settings = this.generateSettingsProperties();
-            sapServer = new SAPServer(settings, objectProvider);
+
+            SAPServerArgs sapServerArgs = new SAPServerArgs(settings,
+                    traceManager,
+                    this.FlattenTablesItems,
+                    this.ConfirmationTimeoutSec * 1000,
+                    this.UseJSON);
+
+            sapServer = new SAPServer(sapServerArgs);
             sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
@@ -201,7 +197,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
             LOGERROR("SAPService could not be started: " + e.getMessage());
-            sapServer.deleteDataProviders();
+            sapServer.stop();
             handleMessages();
             throw new RuntimeException();
         }
@@ -254,7 +250,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
         if (importDataQueue.isEmpty()) {
             if (handleMessages()) {
-                sapServer.deleteDataProviders();
+                sapServer.stop();
                 handleMessages();
                 throw new RuntimeException();
             }
@@ -282,10 +278,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Import XML schemas
         if (!importData.isJSON() && ImportXMLSchemas && irisSchemaImporter != null) {
             // import xsd
+            if (!importData.isSchemaComplete()) {
+                LOGWARNING("Importing incomplete XML schema for function '" + importData.getFunctionName() + "'.");
+            }
             try {
                 boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
                         importData.getFunctionName(),
-                        importData.getSchema());
+                        importData.getSchema(),
+                        importData.isSchemaComplete());
                 if (importResult) {
                     LOGINFO("Imported new XML schema: " + importData.getFunctionName());
                 }
@@ -303,7 +303,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
         if (handleMessages()) {
-            sapServer.deleteDataProviders();
+            sapServer.stop();
             handleMessages();
             throw new RuntimeException();
         }
@@ -379,8 +379,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle())
-                .traceMessage("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
+        if (this.EnableTracing) {
+            traceBuffer.add("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
+        }
     }
 
     /**

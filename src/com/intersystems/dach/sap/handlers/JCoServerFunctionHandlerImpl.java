@@ -3,9 +3,10 @@ package com.intersystems.dach.sap.handlers;
 import javax.naming.TimeLimitExceededException;
 
 import com.intersystems.dach.sap.SAPImportData;
+import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.sap.utils.XMLUtils;
+import com.intersystems.dach.sap.utils.XSDSchema;
 import com.intersystems.dach.sap.utils.XSDUtils;
-import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.AbapClassException;
 import com.sap.conn.jco.AbapException;
@@ -24,7 +25,7 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
 
     // The callback function to call
     private final SAPServerImportDataHandler importDataHandler;
-    private ObjectProvider objectProvider;
+    private SAPServerArgs sapServerArgs;
 
     // utils instances
     private XMLUtils xmlUtils;
@@ -40,11 +41,11 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * @param traceManagerHandle    the trace manager handle
      * @param flattenTablesItems    if true, the tables and items will be flattened
      */
-    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, ObjectProvider objectProvider) {
+    public JCoServerFunctionHandlerImpl(SAPServerImportDataHandler importDataHandler, SAPServerArgs sapServerArgs) {
         this.importDataHandler = importDataHandler;
-        this.objectProvider = objectProvider;
-        xmlUtils = new XMLUtils(objectProvider);
-        xsdUtils = new XSDUtils(objectProvider);
+        this.sapServerArgs = sapServerArgs;
+        xmlUtils = new XMLUtils(sapServerArgs);
+        xsdUtils = new XSDUtils(sapServerArgs);
     }
 
     @Override
@@ -52,11 +53,12 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
             throws AbapException, AbapClassException {
         String functionName = function.getName();
         String data = null;
-        String schema = null;
+        XSDSchema schema = null;
+        boolean schemaComplete = false;
 
         trace("Handle request by function '" + functionName + "'.");
 
-        if (objectProvider.isUseJson()) {
+        if (sapServerArgs.isUseJson()) {
             data = function.getImportParameterList().toJSON();
         } else {
             try {
@@ -66,29 +68,32 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
                 data = xmlUtils.convert(importParameterXML, functionName);
                 trace("XML data: " + data);
             } catch (Exception e) {
-                TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle())
-                        .traceMessage("Could not convert import parameters to XML: " + e.getMessage());
+                trace("Could not convert import parameters to XML: " + e.getMessage());
                 throw new AbapClassException(e);
             }
             try {
                 trace("Generating XSD schema...");
-                schema = xsdUtils.createXSDString(function, true, false);
-                trace("XSD data: " + schema);
+                schema = xsdUtils.createXSD(function, true, false);
+                schemaComplete = schema.isSchemaComplete();
+                trace("XSD data: " + schema.getSchema());
             } catch (Exception e) {
-                TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle()).traceMessage(
-                        "Could not create XSD schema for function '" + functionName + "': " + e.getMessage());
+                trace("Could not create XSD schema for function '" + functionName + "': " + e.getMessage());
             }
         }
         try {
             // call the import data handler function
-            SAPImportData importData = new SAPImportData(functionName, data, objectProvider.isUseJson(), schema);
+            SAPImportData importData = new SAPImportData(functionName,
+                    data,
+                    sapServerArgs.isUseJson(),
+                    (schema == null ? null : schema.getSchema()),
+                    schemaComplete);
 
             trace("Calling import data receiver handler.");
             importDataHandler.onImportDataReceived(importData);
 
             trace("Waiting for confirmation for message with ID " + importData.getID() + ".");
 
-            importData.waitForConfirmation(objectProvider.getConfirmationTimeoutMs());
+            importData.waitForConfirmation(sapServerArgs.getConfirmationTimeoutMs());
 
             trace("Confirmation received for message with ID " + importData.getID() + ".");
         } catch (TimeLimitExceededException e) {
@@ -104,6 +109,6 @@ public class JCoServerFunctionHandlerImpl implements JCoServerFunctionHandler {
      * @param msg The message to trace
      */
     private void trace(String msg) {
-        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle()).traceMessage(msg);
+        sapServerArgs.getTraceManager().traceMessage(msg);
     }
 }

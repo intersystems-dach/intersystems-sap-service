@@ -2,7 +2,6 @@ package com.intersystems.dach.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
 import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
 
@@ -12,22 +11,9 @@ import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
  * @author Philipp Bonin
  * @version 1.0
  */
-public final class TraceManager {
-    private static HashMap<Object, TraceManager> instances = new HashMap<Object, TraceManager>();
+public class TraceManager {
 
     private Collection<SAPServerTraceMsgHandler> traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
-
-    public static TraceManager getTraceManager(Object handle) {
-        if (!instances.containsKey(handle)) {
-            instances.put(handle, new TraceManager());
-        }
-
-        return instances.get(handle);
-    }
-
-    // make this class static
-    private TraceManager() {
-    }
 
     /**
      * Register a trace message handler.

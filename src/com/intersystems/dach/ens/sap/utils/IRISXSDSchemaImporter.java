@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
@@ -27,13 +26,15 @@ public class IRISXSDSchemaImporter {
     private static final SimpleDateFormat directoryTimestampFormat = new SimpleDateFormat("yyyyMMdd_HHmm");
     private Path xsdDirectoryPath = null;
     private Collection<String> knownSchemas = null;
+    private Collection<String> incompleteSchemas = null;
     private boolean structureCreated;
-    private ObjectProvider objectProvider;
+    private TraceManager traceManager;
 
-    public IRISXSDSchemaImporter(String xsdDirectoryPath, ObjectProvider objectProvider) throws IOException {
+    public IRISXSDSchemaImporter(String xsdDirectoryPath, TraceManager traceManager) throws IOException {
         this.knownSchemas = new ArrayList<String>();
+        this.incompleteSchemas = new ArrayList<String>();
         this.structureCreated = false;
-        this.objectProvider = objectProvider;
+        this.traceManager = traceManager;
 
         Path baseDirPath = Paths.get(xsdDirectoryPath);
         if (!Files.exists(baseDirPath)) {
@@ -71,10 +72,10 @@ public class IRISXSDSchemaImporter {
      * @param xsdSchema The XSD schama
      * @return true if the schema was imported, false if the schema already exists.
      */
-    public boolean importSchemaIfNotExists(String schemaId, String xsdSchema)
+    public boolean importSchemaIfNotExists(String schemaId, String xsdSchema, boolean complete)
             throws IOException, IllegalStateException, IllegalArgumentException, RuntimeException {
 
-        if (knownSchemas.contains(schemaId)) {
+        if (knownSchemas.contains(schemaId) && !incompleteSchemas.contains(schemaId)) {
             return false;
         }
 
@@ -111,6 +112,11 @@ public class IRISXSDSchemaImporter {
         trace("Imported XSD schema to IRIS: " + schemaId + ".xsd");
 
         knownSchemas.add(schemaId);
+
+        if (!complete) {
+            incompleteSchemas.add(schemaId);
+        }
+
         return true;
     }
 
@@ -120,6 +126,6 @@ public class IRISXSDSchemaImporter {
      * @param msg The message to trace
      */
     private void trace(String msg) {
-        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle()).traceMessage(msg);
+        traceManager.traceMessage(msg);
     }
 }

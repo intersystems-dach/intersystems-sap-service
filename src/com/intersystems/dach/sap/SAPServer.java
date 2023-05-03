@@ -12,7 +12,6 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
-import com.intersystems.dach.utils.ObjectProvider;
 import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
 import com.sap.conn.jco.ext.DestinationDataProvider;
@@ -42,7 +41,6 @@ public class SAPServer implements JCoServerErrorListener,
     private String serverName;
     private String destinationName;
     private JCoServer jCoServer;
-    private Properties settings;
 
     // Event handlers
     private SAPServerImportDataHandler importDataHandler;
@@ -51,7 +49,7 @@ public class SAPServer implements JCoServerErrorListener,
     private Collection<SAPServerStateHandler> stateHandlers;
 
     // Tracing
-    private ObjectProvider objectProvider;
+    private SAPServerArgs objectProvider;
 
     /**
      * Initializes the server.
@@ -60,13 +58,11 @@ public class SAPServer implements JCoServerErrorListener,
      * @param useJson          Use JSON format instead of XML format.
      * @param objectProvider   Trace Manager handle
      */
-    public SAPServer(Properties settings, ObjectProvider objectProvider) {
+    public SAPServer(SAPServerArgs objectProvider) {
         // Create handler lists
         this.errorHandlers = new ArrayList<SAPServerErrorHandler>();
         this.exceptionHandlers = new ArrayList<SAPServerExceptionHandler>();
         this.stateHandlers = new ArrayList<SAPServerStateHandler>();
-
-        this.settings = settings;
 
         this.jCoServer = null;
 
@@ -90,7 +86,7 @@ public class SAPServer implements JCoServerErrorListener,
         }
 
         StringBuilder sb = new StringBuilder();
-        for (Entry<Object, Object> e : settings.entrySet()) {
+        for (Entry<Object, Object> e : objectProvider.getSapProperties().entrySet()) {
             if (e.getKey().toString().equals(DestinationDataProvider.JCO_PASSWD)) {
                 continue;
             }
@@ -101,16 +97,16 @@ public class SAPServer implements JCoServerErrorListener,
         trace("Registering settings with data provider.");
 
         // Set server and destination name
-        serverName = settings.getProperty(ServerDataProvider.JCO_PROGID);
-        destinationName = settings.getProperty(ServerDataProvider.JCO_REP_DEST);
+        serverName = objectProvider.getSapProperties().getProperty(ServerDataProvider.JCO_PROGID);
+        destinationName = objectProvider.getSapProperties().getProperty(ServerDataProvider.JCO_REP_DEST);
 
         try {
-            DestinationDataProviderImpl.setProperties(destinationName, settings);
-            ServerDataProviderImpl.setProperties(serverName, settings);
+            DestinationDataProviderImpl.setProperties(destinationName, objectProvider.getSapProperties());
+            ServerDataProviderImpl.setProperties(serverName, objectProvider.getSapProperties());
         } catch (IllegalStateException e) {
-            throw new Exception("Yolo" + e.getMessage());
+            throw new Exception(e.getMessage());
         } catch (Exception e) {
-            throw new Exception("Yolo2" + e.getClass() + e.toString());
+            throw new Exception(e.getClass() + e.toString());
         }
 
         trace("Settings registered.");
@@ -235,24 +231,30 @@ public class SAPServer implements JCoServerErrorListener,
         trace("Stopping SAP server.");
 
         if (jCoServer != null) {
-            jCoServer.stop();
-
-            while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
-                Thread.sleep(500);
+            try {
+                jCoServer.stop();
+                while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
+                    Thread.sleep(500);
+                }
+                trace("SAP server stopped.");
+            } catch (Exception e) {
+                for (SAPServerExceptionHandler handler : exceptionHandlers) {
+                    handler.onExceptionOccured(e);
+                }
+            } finally {
+                jCoServer = null;
+                deleteDataProviders();
+                trace("Settings removed.");
             }
+
         }
 
-        trace("SAP server stopped.");
-
-        deleteDataProviders();
-
-        trace("Settings removed.");
     }
 
     /**
      * Delete the settings from the data providers.
      */
-    public void deleteDataProviders() {
+    private void deleteDataProviders() {
         trace("Removing settings from data provider.");
         DestinationDataProviderImpl.deleteProperties(destinationName);
         ServerDataProviderImpl.deleteProperties(serverName);
@@ -264,7 +266,7 @@ public class SAPServer implements JCoServerErrorListener,
      * @param msg The message to trace
      */
     private void trace(String msg) {
-        TraceManager.getTraceManager(objectProvider.getTraceManagerHandle()).traceMessage(msg);
+        objectProvider.getTraceManager().traceMessage(msg);
     }
 
     @Override
