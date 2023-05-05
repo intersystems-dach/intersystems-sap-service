@@ -49,6 +49,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 -   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2021.1 or newer_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2021.1 or newer_
 -   An interoperability enabled namespace
+-   Java JDK _1.8_ or _11_
 
 ---
 
@@ -65,9 +66,10 @@ An InterSystems SAP Business Service to receive from a SAP System.
 2. Click on _Create External Language Server_ or configure the standard _%Java Server_ server by double-clicking on the server name
 3. Select _Java_ as the _Server Type_
 4. Select the _sapjco.jar_ in the _Class Path_ field. **The _sapjco.dll_ must be in the same folder as the _sapjco.jar_ file**
-5. Select the jdk **1.8** folder in the _Java Home Directory_ field
-6. Click on _Save_
-7. Click on _Start_ next to the server you just created
+5. Select the _intersystems-sap-service-\*.jar_ in the _Class Path_ field and with a Semi-colon (;) separate the _sapjco.jar_ and the _intersystems-sap-service-\*.jar_ file
+6. Select the jdk folder in the _Java Home Directory_ field
+7. Click on _Save_
+8. Click on _Start_ next to the server you just created
 
 > **Note:** This step is namespace independent. You can use the same server in multiple namespaces.
 
@@ -101,11 +103,10 @@ An InterSystems SAP Business Service to receive from a SAP System.
 2. Select the just created service
 3. Select the _Settings_ tab on the right side of the screen
 4. Under _Remote Inbound Adapter Settings: External Language Server Name_ configure the name of the external language server you created in the [Setup an external language server](#setup-an-external-language-server) step
-5. Under _Remote Inbound Adapter Settings: Gateway Extra CLASSPATH_ configure the path to the _intersystems-sap-service-\*.jar_ file
-6. Configure all SAP connection parameters
-7. Under _Basic Settings: Target Config Names_ configure the name of the process or the operation you want to call
-8. Click on _Apply_
-9. Start the service
+5. Configure all SAP connection parameters
+6. Under _Basic Settings: Target Config Names_ configure the name of the process or the operation you want to call
+7. Click on _Apply_
+8. Start the service
 
 > **Tip:** You can see if the service could be successfully started in the _Log_ tab of the service.
 
