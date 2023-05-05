@@ -1,4 +1,4 @@
-package com.intersystems.dach.ens.sap.utils;
+package com.intersystems.dach.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,13 +11,9 @@ import com.intersystems.dach.sap.handlers.SAPServerTraceMsgHandler;
  * @author Philipp Bonin
  * @version 1.0
  */
-public final class TraceManager {
+public class TraceManager {
 
-    private static Collection<SAPServerTraceMsgHandler> traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
-
-    // Make this a static class
-    private TraceManager() {
-    }
+    private Collection<SAPServerTraceMsgHandler> traceHandlers = new ArrayList<SAPServerTraceMsgHandler>();
 
     /**
      * Register a trace message handler.
@@ -25,7 +21,7 @@ public final class TraceManager {
      * @param traceMsgHandler
      * @return true, if registration was successful.
      */
-    public static boolean registerTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
+    public boolean registerTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
         return traceHandlers.add(traceMsgHandler);
     }
 
@@ -35,7 +31,7 @@ public final class TraceManager {
      * @param traceMsgHandler
      * @return true, if unregistration was successful.
      */
-    public static boolean unregisterTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
+    public boolean unregisterTraceMsgHandler(SAPServerTraceMsgHandler traceMsgHandler) {
         return traceHandlers.remove(traceMsgHandler);
     }
 
@@ -44,7 +40,7 @@ public final class TraceManager {
      * 
      * @param message The message to write.
      */
-    public static void traceMessage(String message) {
+    public void traceMessage(String message) {
         for (SAPServerTraceMsgHandler handler : traceHandlers) {
             handler.onTraceMSg(message);
         }

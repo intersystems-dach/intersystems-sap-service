@@ -25,6 +25,8 @@ public class SAPImportData {
 
     private boolean confirmed;
 
+    private boolean schemaComplete;
+
     /**
      * Create a new SAPImportData object without schema
      * 
@@ -32,7 +34,7 @@ public class SAPImportData {
      * @param schema - the schema
      */
     public SAPImportData(String functionName, String data, boolean isJSON) {
-        this(functionName, data, isJSON, null);
+        this(functionName, data, isJSON, null, false);
     }
 
     /**
@@ -41,13 +43,14 @@ public class SAPImportData {
      * @param data   - the data
      * @param schema - the schema
      */
-    public SAPImportData(String functionName, String data, boolean isJSON, String schema) {
+    public SAPImportData(String functionName, String data, boolean isJSON, String schema, boolean schemaComplete) {
         this.functionName = functionName;
         this.data = data;
         this.isJSON = isJSON;
         this.schema = schema;
         counter++;
         ID = counter;
+        this.schemaComplete = schemaComplete;
     }
 
     /**
@@ -84,6 +87,15 @@ public class SAPImportData {
      */
     public boolean isJSON() {
         return isJSON;
+    }
+
+    /**
+     * Indicates if the schema is complete.
+     * 
+     * @return true if the schema is complete, false if not.
+     */
+    public boolean isSchemaComplete() {
+        return schemaComplete;
     }
 
     /**

@@ -20,6 +20,8 @@ import java.io.StringWriter;
 import java.util.Hashtable;
 import java.util.Map;
 
+import com.intersystems.dach.sap.SAPServerArgs;
+import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.JCoMetaData;
 import com.sap.conn.jco.JCoParameterList;
@@ -35,15 +37,20 @@ import com.sap.conn.jco.JCoTable;
  * 
  */
 
-public final class XSDUtils {
+public class XSDUtils {
 
-    // Make this a static class
-    private XSDUtils() {
+    private Map<String, XSDSchema> schemaCache;
+
+    private SAPServerArgs sapServerArgs;
+
+    private Map<Document, Boolean> documentStatusMap;
+
+    public XSDUtils(SAPServerArgs sapServerArgs) {
+        this.sapServerArgs = sapServerArgs;
+        this.schemaCache = new Hashtable<String, XSDSchema>();
+        this.documentStatusMap = new Hashtable<Document, Boolean>();
+
     }
-
-    private static Map<String, String> schemaCache = new Hashtable<String, String>();
-
-    private static boolean FlattenTablesItems = false;
 
     /**
      * This method converts a JCoFunction to an XSD String.
@@ -58,7 +65,7 @@ public final class XSDUtils {
      * @throws IOException
      * @throws TransformerException
      */
-    public static String createXSDString(JCoFunction function, boolean isImportParameter, boolean force)
+    public XSDSchema createXSD(JCoFunction function, boolean isImportParameter, boolean force)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
         if (!force && schemaCache.containsKey(function.getName())) {
@@ -66,13 +73,15 @@ public final class XSDUtils {
         }
 
         Document doc = createXSDDocument(function, isImportParameter);
+        this.documentStatusMap.put(doc, true);
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         StringWriter stringWriter = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(stringWriter));
         String xsdString = stringWriter.toString();
-        schemaCache.put(function.getName(), xsdString);
-        return xsdString;
+        XSDSchema xsdSchema = new XSDSchema(xsdString, documentStatusMap.remove(doc));
+        schemaCache.put(function.getName(), xsdSchema);
+        return xsdSchema;
     }
 
     /**
@@ -87,7 +96,7 @@ public final class XSDUtils {
      * @throws IOException
      * @throws TransformerException
      */
-    public static Document createXSDDocument(JCoFunction function, boolean isImportParameter)
+    private Document createXSDDocument(JCoFunction function, boolean isImportParameter)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
         // create the XSD document
@@ -157,7 +166,7 @@ public final class XSDUtils {
      * @param doc           The XSD document
      * @param parameterList The parameter list of the JCoFunction
      */
-    private static void convertStructure(JCoStructure structure, Element root, Document doc,
+    private void convertStructure(JCoStructure structure, Element root, Document doc,
             JCoParameterList parameterList) {
         // add sequence
         Element sequence = doc.createElement("xs:sequence");
@@ -178,8 +187,8 @@ public final class XSDUtils {
      * @param doc           The XSD document
      * @param parameterList The parameter list of the JCoFunction
      */
-    private static void convertTable(JCoTable table, Element root, Document doc,
-            JCoParameterList parameterList) {
+    private void convertTable(JCoTable table, Element root, Document doc,
+            JCoParameterList parameterList, String name) {
 
         // add sequence
         Element sequence = doc.createElement("xs:sequence");
@@ -187,7 +196,7 @@ public final class XSDUtils {
         root = sequence;
 
         // add item element
-        if (!FlattenTablesItems) {
+        if (!sapServerArgs.isFlattenTablesItems()) {
             Element itemElement = doc.createElement("xs:element");
             itemElement.setAttribute("name", "item");
             itemElement.setAttribute("maxOccurs", "unbounded");
@@ -205,12 +214,20 @@ public final class XSDUtils {
             root = sequenceItem;
         }
 
-        // TODO could throw exception
-        /*
-         * if (table.isEmpty()) {
-         * return;
-         * }
-         */
+        // TODO
+        if (table.isEmpty()) {
+
+            Element anyElement = doc.createElement("xs:any");
+            anyElement.setAttribute("maxOccurs", "unbounded");
+            anyElement.setAttribute("minOccurs", "0");
+
+            anyElement.setAttribute("processContents", "skip");
+
+            root.appendChild(anyElement);
+            documentStatusMap.put(doc, false);
+            sapServerArgs.getTraceManager().traceMessage("Table " + name + " is empty, generic XSD element is used!");
+            return;
+        }
 
         JCoMetaData tableMetadata = table.getMetaData();
         for (int i = 0; i < tableMetadata.getFieldCount(); i++) {
@@ -227,7 +244,7 @@ public final class XSDUtils {
      * @param parameterList The parameter list of the JCoFunction
      * @return The XSD element
      */
-    private static Element convertElement(int i, JCoMetaData metadata, Document doc, JCoParameterList parameterList,
+    private Element convertElement(int i, JCoMetaData metadata, Document doc, JCoParameterList parameterList,
             JCoRecord parent) {
         String name = metadata.getName(i).replace("/", "_-");
         String description = metadata.getDescription(i);
@@ -321,14 +338,14 @@ public final class XSDUtils {
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
-                if (FlattenTablesItems) {
+                if (sapServerArgs.isFlattenTablesItems()) {
                     element.setAttribute("maxOccurs", "unbounded");
                 }
 
                 Element complexTypeTable = doc.createElement("xs:complexType");
 
                 JCoTable table = parent == null ? parameterList.getTable(name) : parent.getTable(name);
-                convertTable(table, complexTypeTable, doc, parameterList);
+                convertTable(table, complexTypeTable, doc, parameterList, name);
 
                 element.appendChild(complexTypeTable);
                 break;
@@ -345,15 +362,6 @@ public final class XSDUtils {
         Comment comment = doc.createComment(name + " : " + description);
         element.appendChild(comment);
         return element;
-    }
-
-    /**
-     * Set the flag to flatten tables items
-     * 
-     * @param flattenTablesItems - flag to flatten tables items
-     */
-    public static void setFlattenTablesItems(boolean flattenTablesItems) {
-        XSDUtils.FlattenTablesItems = flattenTablesItems;
     }
 
 }

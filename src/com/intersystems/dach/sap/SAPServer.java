@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.Map.Entry;
 
-import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerFunctionHandlerImpl;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
@@ -13,9 +12,9 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
+import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
 import com.sap.conn.jco.ext.DestinationDataProvider;
-import com.sap.conn.jco.ext.Environment;
 import com.sap.conn.jco.ext.ServerDataProvider;
 import com.sap.conn.jco.server.DefaultServerHandlerFactory;
 import com.sap.conn.jco.server.JCoServer;
@@ -39,16 +38,9 @@ public class SAPServer implements JCoServerErrorListener,
         JCoServerExceptionListener,
         JCoServerStateChangedListener {
 
-    private static DestinationDataProvider destinationDataProvider = null;
-    private static ServerDataProvider serverDataProvider = null;
-
+    private String serverName;
+    private String destinationName;
     private JCoServer jCoServer;
-
-    private boolean useJson;
-
-    private int confirmationTimeoutMs = 20000;
-
-    private Properties settings;
 
     // Event handlers
     private SAPServerImportDataHandler importDataHandler;
@@ -56,48 +48,25 @@ public class SAPServer implements JCoServerErrorListener,
     private Collection<SAPServerExceptionHandler> exceptionHandlers;
     private Collection<SAPServerStateHandler> stateHandlers;
 
-    /**
-     * Initializes the server in XML mode.
-     * 
-     * @param settings          SAP server settings.
-     * @param importDataHandler Import data handler.
-     */
-    public SAPServer(Properties settings) {
-        this(settings, false);
-    }
+    // Tracing
+    private SAPServerArgs objectProvider;
 
     /**
      * Initializes the server.
      * 
-     * @param settingsProvider  SAP server settings provider.
-     * @param importDataHandler Import data handler.
-     * @param useJson           Use JSON format instead of XML format.
+     * @param settingsProvider SAP server settings provider.
+     * @param useJson          Use JSON format instead of XML format.
+     * @param objectProvider   Trace Manager handle
      */
-    public SAPServer(Properties settings, boolean useJson) {
+    public SAPServer(SAPServerArgs objectProvider) {
         // Create handler lists
         this.errorHandlers = new ArrayList<SAPServerErrorHandler>();
         this.exceptionHandlers = new ArrayList<SAPServerExceptionHandler>();
         this.stateHandlers = new ArrayList<SAPServerStateHandler>();
 
-        this.settings = settings;
-
         this.jCoServer = null;
-        this.useJson = useJson;
-    }
 
-    /**
-     * Set the confirmation timeout. This is the time the function handler waits
-     * till the processing of the input data has been confirmed.
-     * 
-     * @param confirmationTimeoutMs Must be at least 200 ms.
-     */
-    public boolean setConfirmationTimeoutMs(int confirmationTimeoutMs) {
-        if (confirmationTimeoutMs >= 200) {
-            this.confirmationTimeoutMs = confirmationTimeoutMs;
-            return true;
-        }
-
-        return false;
+        this.objectProvider = objectProvider;
     }
 
     /**
@@ -106,7 +75,7 @@ public class SAPServer implements JCoServerErrorListener,
      * @throws Exception if SAP server can't be started.
      */
     public void start() throws Exception {
-        TraceManager.traceMessage("Starting SAP server.");
+        trace("Starting SAP server.");
 
         // Pre checks
         if (importDataHandler == null) {
@@ -115,39 +84,40 @@ public class SAPServer implements JCoServerErrorListener,
         if (isRunning()) {
             throw new Exception("Server is already running.");
         }
-        if (SAPServer.destinationDataProvider != null ||
-                SAPServer.serverDataProvider != null) {
-            throw new Exception("Data provider already registered.");
-        }
 
-        // TODO is needed?
         StringBuilder sb = new StringBuilder();
-        for (Entry<Object, Object> e : settings.entrySet()) {
+        for (Entry<Object, Object> e : objectProvider.getSapProperties().entrySet()) {
             if (e.getKey().toString().equals(DestinationDataProvider.JCO_PASSWD)) {
                 continue;
             }
             sb.append(e);
         }
-        TraceManager.traceMessage("Settings: " + sb.toString());
+        trace("Settings: " + sb.toString());
 
-        // Register data providers
-        TraceManager.traceMessage("Registering data providers.");
-        SAPServer.destinationDataProvider = new DestinationDataProviderImpl(settings);
-        SAPServer.serverDataProvider = new ServerDataProviderImpl(settings);
-        Environment.registerDestinationDataProvider(SAPServer.destinationDataProvider);
-        Environment.registerServerDataProvider(SAPServer.serverDataProvider);
+        trace("Registering settings with data provider.");
 
-        TraceManager.traceMessage("Data providers registered.");
+        // Set server and destination name
+        serverName = objectProvider.getSapProperties().getProperty(ServerDataProvider.JCO_PROGID);
+        destinationName = objectProvider.getSapProperties().getProperty(ServerDataProvider.JCO_REP_DEST);
+
+        try {
+            DestinationDataProviderImpl.setProperties(destinationName, objectProvider.getSapProperties());
+            ServerDataProviderImpl.setProperties(serverName, objectProvider.getSapProperties());
+        } catch (IllegalStateException e) {
+            throw new Exception(e.getMessage());
+        } catch (Exception e) {
+            throw new Exception(e.getClass() + e.toString());
+        }
+
+        trace("Settings registered.");
 
         // Create jCoServer object
-        this.jCoServer = JCoServerFactory
-                .getServer(serverDataProvider.getServerProperties("").getProperty(ServerDataProvider.JCO_PROGID));
+        this.jCoServer = JCoServerFactory.getServer(serverName);
 
         // Add generic Function handler
-        TraceManager.traceMessage("Adding handlers and listeners.");
+        trace("Adding handlers and listeners.");
         DefaultServerHandlerFactory.FunctionHandlerFactory factory = new DefaultServerHandlerFactory.FunctionHandlerFactory();
-        factory.registerGenericHandler(
-                new JCoServerFunctionHandlerImpl(importDataHandler, useJson, confirmationTimeoutMs));
+        factory.registerGenericHandler(new JCoServerFunctionHandlerImpl(importDataHandler, objectProvider));
         jCoServer.setCallHandlerFactory(factory);
 
         // Add TID handler
@@ -159,12 +129,17 @@ public class SAPServer implements JCoServerErrorListener,
         jCoServer.addServerExceptionListener(this);
         jCoServer.addServerStateChangedListener(this);
 
-        TraceManager.traceMessage("Handlers and listeners added.");
+        trace("Handlers and listeners added.");
 
         // Start the server
-        jCoServer.start();
+        try {
+            jCoServer.start();
+        } catch (Exception e) {
+            deleteDataProviders();
+            throw e;
+        }
 
-        TraceManager.traceMessage("Server started.");
+        trace("Server started.");
     }
 
     /**
@@ -253,45 +228,45 @@ public class SAPServer implements JCoServerErrorListener,
      * @throws Exception if server can't be stopped.
      */
     public void stop() throws Exception {
-        TraceManager.traceMessage("Stopping SAP server.");
+        trace("Stopping SAP server.");
 
         if (jCoServer != null) {
-            jCoServer.stop();
+            try {
+                jCoServer.stop();
+                while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
+                    Thread.sleep(500);
+                }
+                trace("SAP server stopped.");
+            } catch (Exception e) {
+                for (SAPServerExceptionHandler handler : exceptionHandlers) {
+                    handler.onExceptionOccured(e);
+                }
+            } finally {
+                jCoServer = null;
+                deleteDataProviders();
+                trace("Settings removed.");
+            }
+
         }
 
-        while (!jCoServer.getState().equals(JCoServerState.STOPPED)) {
-            Thread.sleep(1000);
-        }
-        TraceManager.traceMessage("SAP server stopped.");
-
-        TraceManager.traceMessage("Unregistering data providers.");
-        unregisterDataProviders();
-
-        while (Environment.isServerDataProviderRegistered() ||
-                Environment.isDestinationDataProviderRegistered()) {
-            Thread.sleep(1000);
-        }
-
-        SAPServer.serverDataProvider = null;
-        SAPServer.destinationDataProvider = null;
-
-        TraceManager.traceMessage("Data providers unregistered.");
     }
 
     /**
-     * Unregister data providers.
+     * Delete the settings from the data providers.
      */
-    public void unregisterDataProviders() {
-        if (SAPServer.serverDataProvider != null) {
-            Environment.unregisterServerDataProvider(SAPServer.serverDataProvider);
-        }
-        if (SAPServer.destinationDataProvider != null) {
-            Environment.unregisterDestinationDataProvider(SAPServer.destinationDataProvider);
-        }
+    private void deleteDataProviders() {
+        trace("Removing settings from data provider.");
+        DestinationDataProviderImpl.deleteProperties(destinationName);
+        ServerDataProviderImpl.deleteProperties(serverName);
+    }
 
-        destinationDataProvider = null;
-        serverDataProvider = null;
-
+    /**
+     * Trace a message.
+     * 
+     * @param msg The message to trace
+     */
+    private void trace(String msg) {
+        objectProvider.getTraceManager().traceMessage(msg);
     }
 
     @Override

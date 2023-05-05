@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 
@@ -25,16 +26,20 @@ public class IRISXSDSchemaImporter {
     private static final SimpleDateFormat directoryTimestampFormat = new SimpleDateFormat("yyyyMMdd_HHmm");
     private Path xsdDirectoryPath = null;
     private Collection<String> knownSchemas = null;
+    private Collection<String> incompleteSchemas = null;
     private boolean structureCreated;
+    private TraceManager traceManager;
 
-    public IRISXSDSchemaImporter(String xsdDirectoryPath) throws IOException {
+    public IRISXSDSchemaImporter(String xsdDirectoryPath, TraceManager traceManager) throws IOException {
         this.knownSchemas = new ArrayList<String>();
+        this.incompleteSchemas = new ArrayList<String>();
         this.structureCreated = false;
+        this.traceManager = traceManager;
 
         Path baseDirPath = Paths.get(xsdDirectoryPath);
         if (!Files.exists(baseDirPath)) {
             Files.createDirectories(baseDirPath);
-            TraceManager.traceMessage("Created base directory: " + baseDirPath.toString());
+            trace("Created base directory: " + baseDirPath.toString());
         } else if (!Files.isWritable(baseDirPath)) {
             throw new IOException("Path is not a writeable: " + baseDirPath);
         }
@@ -67,10 +72,10 @@ public class IRISXSDSchemaImporter {
      * @param xsdSchema The XSD schama
      * @return true if the schema was imported, false if the schema already exists.
      */
-    public boolean importSchemaIfNotExists(String schemaId, String xsdSchema)
+    public boolean importSchemaIfNotExists(String schemaId, String xsdSchema, boolean complete)
             throws IOException, IllegalStateException, IllegalArgumentException, RuntimeException {
-        
-        if (knownSchemas.contains(schemaId)) {
+
+        if (knownSchemas.contains(schemaId) && !incompleteSchemas.contains(schemaId)) {
             return false;
         }
 
@@ -81,12 +86,12 @@ public class IRISXSDSchemaImporter {
         if (xsdDirectoryPath == null) {
             throw new IllegalStateException("IRISXSDUtils has not been initialized.");
         }
-        
+
         // Create directory if it does not exist
         if (!this.structureCreated) {
             Files.createDirectory(xsdDirectoryPath);
             this.structureCreated = true;
-            TraceManager.traceMessage("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
+            trace("Created directory for XSD schemas: " + xsdDirectoryPath.toString());
         }
 
         // Write schema to file
@@ -95,7 +100,7 @@ public class IRISXSDSchemaImporter {
         FileWriter writer = new FileWriter(file);
         writer.write(xsdSchema);
         writer.close();
-        TraceManager.traceMessage("Writing XSD schema to file: " + schemaId + ".xsd");
+        trace("Writing XSD schema to file: " + schemaId + ".xsd");
 
         // Import schema to iris
         IRIS iris = GatewayContext.getIRIS();
@@ -104,9 +109,23 @@ public class IRISXSDSchemaImporter {
         }
         iris.classMethodStatusCode("EnsLib.EDI.XML.SchemaXSD", "Import", xsdFilePath.toString());
 
-        TraceManager.traceMessage("Imported XSD schema to IRIS: " + schemaId + ".xsd");
+        trace("Imported XSD schema to IRIS: " + schemaId + ".xsd");
 
         knownSchemas.add(schemaId);
+
+        if (!complete) {
+            incompleteSchemas.add(schemaId);
+        }
+
         return true;
+    }
+
+    /**
+     * Trace a message.
+     * 
+     * @param msg The message to trace
+     */
+    private void trace(String msg) {
+        traceManager.traceMessage(msg);
     }
 }

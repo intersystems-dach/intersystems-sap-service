@@ -13,16 +13,15 @@ import com.intersystems.dach.ens.sap.testing.TestRunner;
 import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
-import com.intersystems.dach.ens.sap.utils.TraceManager;
 import com.intersystems.dach.sap.SAPServer;
+import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.sap.SAPImportData;
 import com.intersystems.dach.sap.annotations.SAPJCoPropertyAnnotation;
 import com.intersystems.dach.sap.handlers.SAPServerErrorHandler;
 import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
-import com.intersystems.dach.sap.utils.XMLUtils;
-import com.intersystems.dach.sap.utils.XSDUtils;
+import com.intersystems.dach.utils.TraceManager;
 //import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
 //import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
@@ -133,15 +132,28 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     private Queue<SAPImportData> importDataQueue;
     private Queue<Error> errorBuffer;
     private Queue<Exception> exceptionBuffer;
+    private Queue<String> traceBuffer;
+    private Queue<String> warningTraceBuffer;
 
     private boolean warningActiveFlag = false;
 
     @Override
     public void OnInit() throws Exception {
+
+        TraceManager traceManager = new TraceManager();
         // register trace handler
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
-            TraceManager.registerTraceMsgHandler((traceMsg) -> LOGINFO(traceMsg));
+            traceBuffer = new ConcurrentLinkedQueue<String>();
+            traceManager.registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+
+            // TODO only enable with traces?
+            /*
+             * warningTraceBuffer = new ConcurrentLinkedQueue<String>();
+             * TraceManager.getTraceManager(objectProvider.getWarningTraceManagerHandle())
+             * .registerTraceMsgHandler((warningTraceMsg) ->
+             * warningTraceBuffer.add(warningTraceMsg));
+             */
         }
 
         // get iris instance
@@ -150,9 +162,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // print format
         LOGINFO((UseJSON ? "JSON" : "XML") + " is enabled.");
 
-        // Prepare XMLUtils and XSDUtils
-        XMLUtils.setFlattenTablesItems(FlattenTablesItems);
-        XSDUtils.setFlattenTablesItems(FlattenTablesItems);
         if (FlattenTablesItems) {
             LOGINFO("FlattenTablesItems is enabled.");
         }
@@ -165,24 +174,31 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Prepare Schema Import
         if (!UseJSON && ImportXMLSchemas) {
             LOGINFO("XML Schemas import is enabled.");
-            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath);
+            irisSchemaImporter = new IRISXSDSchemaImporter(this.XMLSchemaPath, traceManager);
             LOGINFO("XSD directory: " + irisSchemaImporter.getXsdDirectoryPath());
         }
 
         // Prepare SAP JCo server
         try {
             Properties settings = this.generateSettingsProperties();
-            sapServer = new SAPServer(settings, this.UseJSON);
+
+            SAPServerArgs sapServerArgs = new SAPServerArgs(settings,
+                    traceManager,
+                    this.FlattenTablesItems,
+                    this.ConfirmationTimeoutSec * 1000,
+                    this.UseJSON);
+
+            sapServer = new SAPServer(sapServerArgs);
             sapServer.registerImportDataHandler(this);
             sapServer.registerErrorHandler(this);
             sapServer.registerExceptionHandler(this);
             sapServer.registerStateHandler(this);
-            sapServer.setConfirmationTimeoutMs(ConfirmationTimeoutSec * 1000);
             sapServer.start();
             LOGINFO("Started SAP Service.");
         } catch (Exception e) {
             LOGERROR("SAPService could not be started: " + e.getMessage());
-            sapServer.unregisterDataProviders();
+            sapServer.stop();
+            handleMessages();
             throw new RuntimeException();
         }
 
@@ -192,9 +208,53 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         }
     }
 
+    /**
+     * Handle trace and errors messages and exceptions.
+     * 
+     * @return True if an error or exception occured, false if not.
+     */
+    private boolean handleMessages() {
+        // Handle trace, errors and exceptions
+        if (traceBuffer != null) {
+            while (!traceBuffer.isEmpty()) {
+                LOGINFO("## " + traceBuffer.poll());
+            }
+        }
+
+        if (warningTraceBuffer != null) {
+            while (!warningTraceBuffer.isEmpty()) {
+                LOGWARNING("## " + warningTraceBuffer.poll());
+            }
+        }
+
+        boolean errorOrExceptionOccured = false;
+
+        while (!exceptionBuffer.isEmpty()) {
+            Exception e = exceptionBuffer.poll();
+            LOGERROR("An exception occured in SAP server: " + e.getMessage());
+            errorOrExceptionOccured = true;
+        }
+
+        while (!errorBuffer.isEmpty()) {
+            Error err = errorBuffer.poll();
+            LOGERROR("An error occured in SAP server: " + err.getMessage());
+            errorOrExceptionOccured = true;
+        }
+
+        return errorOrExceptionOccured;
+
+    }
+
     @Override
     public void OnTask() throws Exception {
+
         if (importDataQueue.isEmpty()) {
+            if (handleMessages()) {
+                sapServer.stop();
+                handleMessages();
+                throw new RuntimeException();
+            }
+
             // No data in queue, wait for next call intervall
             BusinessHost.irisHandle.set("%WaitForNextCallInterval", true);
             // Reset warning flag
@@ -202,6 +262,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 LOGINFO("Back to normal load.");
                 warningActiveFlag = false;
             }
+
             return;
         }
 
@@ -217,10 +278,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         // Import XML schemas
         if (!importData.isJSON() && ImportXMLSchemas && irisSchemaImporter != null) {
             // import xsd
+            if (!importData.isSchemaComplete()) {
+                LOGWARNING("Importing incomplete XML schema for function '" + importData.getFunctionName() + "'.");
+            }
             try {
                 boolean importResult = irisSchemaImporter.importSchemaIfNotExists(
                         importData.getFunctionName(),
-                        importData.getSchema());
+                        importData.getSchema(),
+                        importData.isSchemaComplete());
                 if (importResult) {
                     LOGINFO("Imported new XML schema: " + importData.getFunctionName());
                 }
@@ -237,21 +302,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         BusinessHost.ProcessInput(irisObject);
         importData.confirmProcessed(); // Data is now persistent in the Business process queue.
 
-        // Handle errors and exceptions
-        boolean errorOrExceptionOccured = false;
-        while (exceptionBuffer.size() > 0) {
-            Exception e = exceptionBuffer.poll();
-            LOGERROR("An exception occured in SAP server: " + e.getMessage());
-            errorOrExceptionOccured = true;
-        }
-
-        while (errorBuffer.size() > 0) {
-            Error err = errorBuffer.poll();
-            LOGERROR("An error occured in SAP server: " + err.getMessage());
-            errorOrExceptionOccured = true;
-        }
-
-        if (errorOrExceptionOccured) {
+        if (handleMessages()) {
+            sapServer.stop();
+            handleMessages();
             throw new RuntimeException();
         }
 
@@ -261,12 +314,13 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
          */
         BusinessHost.irisHandle.set("%WaitForNextCallInterval", importDataQueue.isEmpty());
 
-        if (importDataQueue.isEmpty()) {
-            TraceManager.traceMessage("No data in queue, wait for next call intervall.");
-        } else {
-            TraceManager.traceMessage("Data in queue, call OnProcessInput again.");
+        if (this.EnableTracing) {
+            if (importDataQueue.isEmpty()) {
+                this.LOGINFO("## No data in queue, wait for next call intervall.");
+            } else {
+                this.LOGINFO("## Data in queue, call OnProcessInput again.");
+            }
         }
-
     }
 
     @Override
@@ -277,6 +331,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         } catch (Exception e) {
             LOGERROR("An exception occured during stop of the server: " + e.getMessage());
         }
+
+        handleMessages();
 
         // Close iris connection
         GatewayContext.getIRIS().close();
@@ -323,8 +379,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
 
     @Override
     public void onStateChanged(JCoServerState oldState, JCoServerState newState) {
-        TraceManager
-                .traceMessage("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
+        if (this.EnableTracing) {
+            traceBuffer.add("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
+        }
     }
 
     /**
@@ -335,6 +392,14 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
      */
     public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
         _dispatchOnInit(hostObject);
+    }
+
+    /**
+     * This is a workaround to handle a bug in IRIS < 2022.1
+     */
+    public void _setIrisHandles(com.intersystems.jdbc.IRISObject handleCurrent,
+            com.intersystems.jdbc.IRISObject handlePartner) {
+        setIrisHandles(handleCurrent, handlePartner);
     }
 
     /**
