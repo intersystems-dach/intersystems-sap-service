@@ -66,7 +66,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 2. Click on _Create External Language Server_ or configure the standard _%Java Server_ server by double-clicking on the server name
 3. Select _Java_ as the _Server Type_
 4. Select the _sapjco.jar_ in the _Class Path_ field. **The _sapjco.dll_ must be in the same folder as the _sapjco.jar_ file**
-5. Select the _intersystems-sap-service-\*.jar_ in the _Class Path_ field and with a Semi-colon (;) separate the _sapjco.jar_ and the _intersystems-sap-service-\*.jar_ file
+5. Select the _intersystems-sap-service-\*.jar_ in the _Class Path_ field and with a Semi-colon (;) for Windows-Systems and a colon (:) for UNIX-Systems separate the _sapjco.jar_ and the _intersystems-sap-service-\*.jar_ file
 6. Select the jdk folder in the _Java Home Directory_ field
 7. Click on _Save_
 8. Click on _Start_ next to the server you just created
