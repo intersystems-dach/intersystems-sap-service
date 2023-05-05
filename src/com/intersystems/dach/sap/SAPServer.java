@@ -77,10 +77,10 @@ public class SAPServer implements JCoServerErrorListener,
 
         // Pre checks
         if (importDataHandler == null) {
-            throw new Exception("ImportDataHandler is null.");
+            throw new IllegalArgumentException("ImportDataHandler is null.");
         }
         if (isRunning()) {
-            throw new Exception("Server is already running.");
+            throw new IllegalStateException("Server is already running.");
         }
 
         StringBuilder sb = new StringBuilder();
@@ -102,7 +102,7 @@ public class SAPServer implements JCoServerErrorListener,
             DestinationDataProviderImpl.setProperties(destinationName, objectProvider.getSapProperties());
             ServerDataProviderImpl.setProperties(serverName, objectProvider.getSapProperties());
         } catch (IllegalStateException e) {
-            throw new Exception(e.getMessage());
+            throw e;
         } catch (Exception e) {
             throw new Exception(e.getClass() + e.toString());
         }

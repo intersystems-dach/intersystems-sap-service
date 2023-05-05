@@ -12,6 +12,9 @@ import com.intersystems.dach.ens.sap.testing.TestCase;
 import com.intersystems.dach.ens.sap.testing.TestRunner;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
+import com.intersystems.dach.exceptions.FieldException;
+import com.intersystems.dach.exceptions.InitializeException;
+import com.intersystems.dach.exceptions.OnTaskException;
 import com.intersystems.dach.sap.SAPServer;
 import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.sap.SAPImportData;
@@ -202,7 +205,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGERROR("SAPService could not be started: " + e.getMessage());
             sapServer.stop();
             handleMessages();
-            throw new RuntimeException();
+            throw new InitializeException();
         }
 
         if (this.EnableTesting) {
@@ -255,7 +258,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             if (handleMessages()) {
                 sapServer.stop();
                 handleMessages();
-                throw new RuntimeException();
+                throw new OnTaskException();
             }
 
             // No data in queue, wait for next call intervall
@@ -308,7 +311,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (handleMessages()) {
             sapServer.stop();
             handleMessages();
-            throw new RuntimeException();
+            throw new OnTaskException();
         }
 
         /*
@@ -419,12 +422,12 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                 try {
                     String value = field.get(this).toString();
                     if (fieldMetadata.IsRequired() && value.isEmpty()) {
-                        throw new Exception("Required field is empty.");
+                        throw new FieldException(field.getName(), "Required field is empty.");
                     }
                     String key = jcoProperty.jCoName();
                     properties.setProperty(key, value);
                 } catch (Exception e) {
-                    throw new Exception("Field " + field.getName() + ": " + e.getMessage());
+                    throw new FieldException(field.getName(), e.getMessage());
                 }
             }
         }
