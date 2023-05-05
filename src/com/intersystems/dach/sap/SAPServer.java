@@ -2,7 +2,6 @@ package com.intersystems.dach.sap;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Properties;
 import java.util.Map.Entry;
 
 import com.intersystems.dach.sap.handlers.JCoServerFunctionHandlerImpl;
@@ -12,7 +11,6 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.sap.utils.DestinationDataProviderImpl;
 import com.intersystems.dach.sap.utils.ServerDataProviderImpl;
-import com.intersystems.dach.utils.TraceManager;
 import com.intersystems.dach.sap.handlers.JCoServerTIDHandlerImpl;
 import com.sap.conn.jco.ext.DestinationDataProvider;
 import com.sap.conn.jco.ext.ServerDataProvider;

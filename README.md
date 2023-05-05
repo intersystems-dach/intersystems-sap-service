@@ -235,11 +235,7 @@ And the corresponding schema would look like this:
 -   `XMLSchemaPath` _string_ - The path to the folder where the XML Schemas should be stored. If the folder does not exist, it will be created.
 -   `LookUpTableName` _string_ - The name of the table you configured in [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas). If left empty no lookup table will be used.
 -   `FlattenTablesItems` _boolean_ - If enabled, the service will flatten the tables in the XML. See [Flatten Tables Items](#flatten-tables-items) for more information _(default: false)_
-
-<!-- ### Logging
-
--   `LogFilePath` _string_ - An absolute Path to a file where the service will log the messages. The file must be already created and writeable, the service will **not** create the file. If no or an invalid path is set, the service will not log the messages.
--   `ClearLogOnRestart` _boolean_ - If set to true, the log file will be cleared when the service is restarted. _(default: false)_ -->
+-   `XMLNamespace` _string_ - The namespace of the XML. If left empty no namespace will be used. You can use the placeholder `{functionName}` to use the name of the function as namespace.
 
 ### Remote Inbound Adapter Settings
 

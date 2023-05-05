@@ -26,21 +26,16 @@ import com.intersystems.dach.sap.SAPServerArgs;
 
 /**
  * A class to parse XML
- * 
- * @author Philipp Bonin
- * @version 1.0
- * 
  */
 public class XMLUtils {
 
-    private SAPServerArgs objectProvider;
+    private SAPServerArgs sapServerArgs;
 
-    public XMLUtils(SAPServerArgs objectProvider) {
-        this.objectProvider = objectProvider;
+    public XMLUtils(SAPServerArgs sapServerArgs) {
+        this.sapServerArgs = sapServerArgs;
     }
 
-    // XML namespace and header
-    private static final String XMLNAMESPACE = "urn:isc:rfc";
+    // XML header
     private static final String XMLHEADER = "version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"";
 
     /**
@@ -61,14 +56,16 @@ public class XMLUtils {
 
         // rename parent node
         if (!doc.getFirstChild().getNodeName().equals(functionName)) {
-            doc.renameNode(doc.getFirstChild(), XMLNAMESPACE, functionName);
+            doc.renameNode(doc.getFirstChild(),
+                    sapServerArgs.getConvertedXMLNamespace(functionName),
+                    functionName);
         }
 
         // add header
         doc.insertBefore(doc.createProcessingInstruction("xml", XMLHEADER),
                 doc.getFirstChild());
 
-        if (objectProvider.isFlattenTablesItems()) {
+        if (sapServerArgs.isFlattenTablesItems()) {
             List<Node> nodesToRemove = new ArrayList<Node>();
             replaceItem(doc.getDocumentElement(), doc, nodesToRemove);
 
@@ -100,8 +97,7 @@ public class XMLUtils {
         builder = factory.newDocumentBuilder();
 
         // Parse the content to Document object
-        Document doc = builder.parse(new InputSource(new StringReader(xmlString)));
-        return doc;
+        return builder.parse(new InputSource(new StringReader(xmlString)));
     }
 
     /**
@@ -117,8 +113,7 @@ public class XMLUtils {
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
-        String output = writer.getBuffer().toString();
-        return output;
+        return writer.getBuffer().toString();
     }
 
     /**
@@ -184,15 +179,6 @@ public class XMLUtils {
         for (Node node : nodesToRemove) {
             node.getParentNode().removeChild(node);
         }
-    }
-
-    /**
-     * Get the XML namespace
-     * 
-     * @return XML namespace
-     */
-    public static String getXmlnamespace() {
-        return XMLNAMESPACE;
     }
 
 }

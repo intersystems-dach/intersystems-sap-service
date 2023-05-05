@@ -10,7 +10,6 @@ import com.intersystems.dach.ens.common.annotations.ClassMetadata; //intersystem
 import com.intersystems.dach.ens.common.annotations.FieldMetadata; //intersystems-util-3.2.x or older
 import com.intersystems.dach.ens.sap.testing.TestCase;
 import com.intersystems.dach.ens.sap.testing.TestRunner;
-import com.intersystems.dach.ens.sap.testing.TestStatusHandler;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
 import com.intersystems.dach.ens.sap.utils.IRISXSDSchemaImporter;
 import com.intersystems.dach.sap.SAPServer;
@@ -119,6 +118,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "XML", Description = "REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.")
     public boolean FlattenTablesItems = false;
 
+    @FieldMetadata(Category = "XML", Description = "Configure the XML namespace for the generated XML. Use \"{functionName}\" as placeholder for the function name. If left empty the namespace will be generated.")
+    public String XMLNamespace = "urn:isc:sap:{functionName}";
+
     /**
      * ***************
      * *** Members ***
@@ -145,7 +147,7 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (this.EnableTracing) {
             LOGINFO("Tracing is enabled.");
             traceBuffer = new ConcurrentLinkedQueue<String>();
-            traceManager.registerTraceMsgHandler((traceMsg) -> traceBuffer.add(traceMsg));
+            traceManager.registerTraceMsgHandler(traceMsg -> traceBuffer.add(traceMsg));
 
             // TODO only enable with traces?
             /*
@@ -186,7 +188,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                     traceManager,
                     this.FlattenTablesItems,
                     this.ConfirmationTimeoutSec * 1000,
-                    this.UseJSON);
+                    this.UseJSON,
+                    this.XMLNamespace);
 
             sapServer = new SAPServer(sapServerArgs);
             sapServer.registerImportDataHandler(this);
@@ -355,11 +358,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
             LOGINFO("Running " + testCases.size() + " XML test cases.");
         }
         testRunner.addTestCases(testCases);
-        testRunner.runTestsAsync(this, new TestStatusHandler() {
-            public void onTestStatus(String msg) {
-                LOGINFO("TESTING STATUS: " + msg);
-            }
-        });
+
+        testRunner.runTestsAsync(this, msg -> LOGINFO("TESTING STATUS: " + msg));
     }
 
     @Override

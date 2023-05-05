@@ -7,7 +7,6 @@ import com.intersystems.dach.sap.SAPServerArgs;
 import com.intersystems.dach.sap.utils.XMLUtils;
 import com.intersystems.dach.sap.utils.XSDSchema;
 import com.intersystems.dach.sap.utils.XSDUtils;
-import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.AbapClassException;
 import com.sap.conn.jco.AbapException;
 import com.sap.conn.jco.JCoFunction;

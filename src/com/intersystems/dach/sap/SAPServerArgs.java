@@ -14,21 +14,28 @@ public class SAPServerArgs {
     private final int confirmationTimeoutMs;
     private final boolean useJson;
     private final Properties sapProperties;
+    private final String xmlNamespace;
 
     public SAPServerArgs(Properties sapProperties) {
-        this(sapProperties, new TraceManager(), false, 20000, false);
+        this(sapProperties, new TraceManager(), false, 20000, false, "");
     }
 
     public SAPServerArgs(Properties sapProperties,
             TraceManager traceManager,
             boolean flattenTablesItems,
             int confirmationTimeoutMs,
-            boolean useJson) {
+            boolean useJson, String xmlNamespace) {
         this.flattenTablesItems = flattenTablesItems;
         this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.useJson = useJson;
         this.sapProperties = sapProperties;
         this.traceManager = traceManager;
+
+        if (xmlNamespace == null) {
+            this.xmlNamespace = "";
+        } else {
+            this.xmlNamespace = xmlNamespace;
+        }
     }
 
     /**
@@ -78,6 +85,26 @@ public class SAPServerArgs {
      */
     public TraceManager getTraceManager() {
         return traceManager;
+    }
+
+    /**
+     * Get the XML namespace.
+     * 
+     * @return The XML namespace
+     */
+    public String getXmlNamespace() {
+        return xmlNamespace;
+    }
+
+    /**
+     * Get the converted XML namespace. Where the placeholder {functionName} is set
+     * to the given function name.
+     * 
+     * @param functionName The function name
+     * @return The converted XML namespace
+     */
+    public String getConvertedXMLNamespace(String functionName) {
+        return xmlNamespace.replace("{functionName}", functionName);
     }
 
 }

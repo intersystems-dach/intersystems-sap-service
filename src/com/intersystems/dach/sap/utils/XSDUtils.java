@@ -21,7 +21,6 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import com.intersystems.dach.sap.SAPServerArgs;
-import com.intersystems.dach.utils.TraceManager;
 import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.JCoMetaData;
 import com.sap.conn.jco.JCoParameterList;
@@ -31,12 +30,7 @@ import com.sap.conn.jco.JCoTable;
 
 /**
  * This class is used to create an XSD document from a JCoFunction.
- * 
- * @author Philipp Bonin
- * @version 1.0
- * 
  */
-
 public class XSDUtils {
 
     private Map<String, XSDSchema> schemaCache;
@@ -97,7 +91,7 @@ public class XSDUtils {
      * @throws TransformerException
      */
     private Document createXSDDocument(JCoFunction function, boolean isImportParameter)
-            throws ParserConfigurationException, SAXException, IOException, TransformerException {
+            throws ParserConfigurationException {
 
         // create the XSD document
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -109,8 +103,12 @@ public class XSDUtils {
         schema.setAttribute("xmlns:xs", XMLConstants.W3C_XML_SCHEMA_NS_URI);
         schema.setAttribute("attributeFormDefault", "unqualified");
         schema.setAttribute("elementFormDefault", "qualified");
-        schema.setAttribute("targetNamespace", XMLUtils.getXmlnamespace());
-        schema.setAttribute("xmlns:tns", XMLUtils.getXmlnamespace());
+
+        if (sapServerArgs.getXmlNamespace() != null && !sapServerArgs.getXmlNamespace().isEmpty()) {
+            schema.setAttribute("targetNamespace", sapServerArgs.getConvertedXMLNamespace(function.getName()));
+            schema.setAttribute("xmlns", sapServerArgs.getConvertedXMLNamespace(function.getName()));
+        }
+
         doc.appendChild(schema);
 
         Comment comment = doc.createComment("Generated at " + new java.util.Date().toString());
@@ -132,7 +130,7 @@ public class XSDUtils {
         dateOrNullDateType.setAttribute("name", "dateOrNullDate");
         schema.appendChild(dateOrNullDateType);
         Element union = doc.createElement("xs:union");
-        union.setAttribute("memberTypes", "xs:date tns:nullDate");
+        union.setAttribute("memberTypes", "xs:date nullDate");
         dateOrNullDateType.appendChild(union);
 
         // create the root element
@@ -267,7 +265,7 @@ public class XSDUtils {
                 break;
             case JCoMetaData.TYPE_DATE:
                 element = doc.createElement("xs:element");
-                element.setAttribute("type", "tns:dateOrNullDate");
+                element.setAttribute("type", "dateOrNullDate");
                 element.setAttribute("name", name);
                 element.setAttribute("minOccurs", "0");
 
