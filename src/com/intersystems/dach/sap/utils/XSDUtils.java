@@ -1,11 +1,14 @@
 package com.intersystems.dach.sap.utils;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -14,10 +17,15 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import com.intersystems.dach.sap.SAPServerArgs;
@@ -37,12 +45,12 @@ public class XSDUtils {
 
     private SAPServerArgs sapServerArgs;
 
-    private Map<Document, Boolean> documentStatusMap;
+    private Map<Document, List<String>> documentStatusMap;
 
     public XSDUtils(SAPServerArgs sapServerArgs) {
         this.sapServerArgs = sapServerArgs;
         this.schemaCache = new Hashtable<String, XSDSchema>();
-        this.documentStatusMap = new Hashtable<Document, Boolean>();
+        this.documentStatusMap = new Hashtable<Document, List<String>>();
 
     }
 
@@ -63,17 +71,27 @@ public class XSDUtils {
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
 
         if (!force && schemaCache.containsKey(function.getName())) {
-            return schemaCache.get(function.getName());
+            XSDSchema schema = schemaCache.get(function.getName());
+            if (schema.isSchemaComplete()) {
+                return schema;
+            }
+            tryToCompleteSchema(schema,
+                    isImportParameter ? function.getImportParameterList() : function.getExportParameterList());
+            return schema;
         }
 
         Document doc = createXSDDocument(function, isImportParameter);
-        this.documentStatusMap.put(doc, true);
+        this.documentStatusMap.put(doc, new ArrayList<String>());
+
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         StringWriter stringWriter = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(stringWriter));
         String xsdString = stringWriter.toString();
-        XSDSchema xsdSchema = new XSDSchema(xsdString, documentStatusMap.remove(doc));
+
+        List<String> incompleteTableList = this.documentStatusMap.remove(doc);
+        XSDSchema xsdSchema = new XSDSchema(xsdString, incompleteTableList.isEmpty());
+        xsdSchema.addIncompleteTable(incompleteTableList);
         schemaCache.put(function.getName(), xsdSchema);
         return xsdSchema;
     }
@@ -222,7 +240,7 @@ public class XSDUtils {
             anyElement.setAttribute("processContents", "skip");
 
             root.appendChild(anyElement);
-            documentStatusMap.put(doc, false);
+            documentStatusMap.get(doc).add(name);
             sapServerArgs.getTraceManager().traceMessage("Table " + name + " is empty, generic XSD element is used!");
             return;
         }
@@ -360,6 +378,80 @@ public class XSDUtils {
         Comment comment = doc.createComment(name + " : " + description);
         element.appendChild(comment);
         return element;
+    }
+
+    private void tryToCompleteSchema(XSDSchema schema, JCoParameterList parameterList)
+            throws ParserConfigurationException, SAXException, IOException, TransformerException {
+        Document doc = convertStringToDocument(schema.getSchema());
+
+        boolean completeTable = false;
+
+        for (String incompleteTable : schema.getIncompleteTableList()) {
+            JCoTable table = parameterList.getTable(incompleteTable);
+            if (table == null) {
+                continue;
+            }
+            if (table.isEmpty()) {
+                continue;
+            }
+
+            Element root = null;
+            // iterate through child nodes
+            NodeList nodeList = doc.getDocumentElement().getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node currentNode = nodeList.item(i);
+                try {
+                    if (currentNode.getAttributes().getNamedItem("name").getNodeValue().equals(incompleteTable)) {
+                        root = (Element) currentNode.getParentNode();
+                        break;
+                    }
+                } catch (NullPointerException e) {
+
+                }
+            }
+
+            if (root == null) {
+                continue;
+            }
+
+            convertTable(table, root, doc, parameterList, incompleteTable);
+            completeTable = true;
+            schema.removeIncompleteTable(incompleteTable);
+            sapServerArgs.getTraceManager().traceMessage("Table " + incompleteTable + " completed!");
+        }
+        if (completeTable) {
+            schema.setSchema(convertDocumentToString(doc));
+        }
+
+    }
+
+    private Document convertStringToDocument(String xmlString)
+            throws ParserConfigurationException, SAXException, IOException {
+        // Parser that produces DOM object trees from XML content
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+        // API to obtain DOM Document instance
+        DocumentBuilder builder = null;
+        // Create DocumentBuilder with default configuration
+        builder = factory.newDocumentBuilder();
+
+        // Parse the content to Document object
+        return builder.parse(new InputSource(new StringReader(xmlString)));
+    }
+
+    /**
+     * Convert XML Document to String
+     * 
+     * @param doc - XML Document
+     * @return XML in String format
+     * @throws TransformerException
+     */
+    private String convertDocumentToString(Document doc) throws TransformerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        StringWriter stringWriter = new StringWriter();
+        transformer.transform(new DOMSource(doc), new StreamResult(stringWriter));
+        return stringWriter.toString();
     }
 
 }
