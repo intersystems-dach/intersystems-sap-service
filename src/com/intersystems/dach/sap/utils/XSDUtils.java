@@ -8,7 +8,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -380,6 +379,16 @@ public class XSDUtils {
         return element;
     }
 
+    /**
+     * Try to complete the schema with the given parameter list.
+     * 
+     * @param schema        The schema to complete
+     * @param parameterList The parameter list to use
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     * @throws TransformerException
+     */
     private void tryToCompleteSchema(XSDSchema schema, JCoParameterList parameterList)
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
         Document doc = convertStringToDocument(schema.getSchema());
@@ -396,11 +405,12 @@ public class XSDUtils {
             }
 
             Element root = null;
-            // iterate through child nodes
+            // iterate through child nodes to get the node with the name of the
+            // incomplete table
             NodeList nodeList = doc.getDocumentElement().getChildNodes();
             for (int i = 0; i < nodeList.getLength(); i++) {
-                Node currentNode = nodeList.item(i);
                 try {
+                    Node currentNode = nodeList.item(i);
                     if (currentNode.getAttributes().getNamedItem("name").getNodeValue().equals(incompleteTable)) {
                         root = (Element) currentNode.getParentNode();
                         break;
@@ -413,8 +423,15 @@ public class XSDUtils {
             if (root == null) {
                 continue;
             }
+            // remove all children of the root node
+            root.removeChild(root.getFirstChild());
+            // Add a new complexType node
+            Element complexTypeTable = doc.createElement("xs:complexType");
 
-            convertTable(table, root, doc, parameterList, incompleteTable);
+            convertTable(table, complexTypeTable, doc, parameterList, incompleteTable);
+
+            root.appendChild(complexTypeTable);
+
             completeTable = true;
             schema.removeIncompleteTable(incompleteTable);
             sapServerArgs.getTraceManager().traceMessage("Table " + incompleteTable + " completed!");
@@ -425,6 +442,15 @@ public class XSDUtils {
 
     }
 
+    /**
+     * Convert XML String to Document
+     * 
+     * @param xmlString - XML in String format
+     * @return XML Document
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     */
     private Document convertStringToDocument(String xmlString)
             throws ParserConfigurationException, SAXException, IOException {
         // Parser that produces DOM object trees from XML content
