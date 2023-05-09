@@ -395,8 +395,7 @@ public class XSDUtils {
         List<String> completeTableList = new ArrayList<String>();
 
         for (String incompleteTable : schema.getIncompleteTableList()) {
-            // TODO get the table from the parent
-            JCoTable table = parameterList.getTable(incompleteTable);
+            JCoTable table = getTableByName(parameterList, incompleteTable);
             if (table == null) {
                 continue;
             }
@@ -435,6 +434,85 @@ public class XSDUtils {
             schema.setSchema(convertDocumentToString(doc));
         }
 
+    }
+
+    /**
+     * Get the table with the given name from the parameter list.
+     * 
+     * @param parameterList The parameter list to use
+     * @param tableName     The name of the table
+     * @return The table with the given name or null if no table with the given name
+     *         was found
+     */
+    private JCoTable getTableByName(JCoParameterList parameterList, String tableName) {
+
+        JCoMetaData metadata = parameterList.getMetaData();
+
+        for (int i = 0; i < metadata.getFieldCount(); i++) {
+            JCoTable table = getTableByNameHelper(i, metadata, parameterList, null, tableName);
+            if (table != null) {
+                return table;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Helper method to get the table with the given name from the parameter list.
+     * SHOULD ONLY BE CALLED BY {@link #getTableByName(JCoParameterList, String)}!
+     * 
+     * @param i
+     * @param metadata
+     * @param parameterList
+     * @param parent
+     * @param tableName
+     * @return
+     */
+    private JCoTable getTableByNameHelper(int i,
+            JCoMetaData metadata,
+            JCoParameterList parameterList,
+            JCoRecord parent,
+            String tableName) {
+        String name = metadata.getName(i).replace("/", "_-");
+
+        JCoRecord newParent = null;
+
+        switch (metadata.getType(i)) {
+            case JCoMetaData.TYPE_STRUCTURE:
+                // get the structure
+                newParent = parent == null ? parameterList.getStructure(name) : parent.getStructure(name);
+                break;
+            case JCoMetaData.TYPE_TABLE:
+                // get the table
+                JCoTable table = parent == null ? parameterList.getTable(name) : parent.getTable(name);
+
+                // return table if name matches
+                if (name.equals(tableName)) {
+                    return table;
+                }
+
+                newParent = table;
+
+                break;
+            default:
+                return null;
+        }
+
+        // iterate over all fields of the new parent
+        JCoMetaData newMetadata = newParent.getMetaData();
+        for (int j = 0; j < newMetadata.getFieldCount(); j++) {
+            JCoTable tableFromChilds = getTableByNameHelper(j,
+                    newMetadata,
+                    parameterList,
+                    newParent,
+                    tableName);
+            if (tableFromChilds != null) {
+                return tableFromChilds;
+            }
+        }
+
+        return null;
     }
 
     /**
