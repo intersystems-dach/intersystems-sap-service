@@ -11,21 +11,26 @@ public class SAPServerArgs {
 
     private final TraceManager traceManager;
     private final boolean flattenTablesItems;
+    private final boolean completeSchema;
     private final int confirmationTimeoutMs;
     private final boolean useJson;
     private final Properties sapProperties;
     private final String xmlNamespace;
 
     public SAPServerArgs(Properties sapProperties) {
-        this(sapProperties, new TraceManager(), false, 20000, false, "");
+        this(sapProperties, new TraceManager(), false, 20000, false, "", false);
     }
 
-    public SAPServerArgs(Properties sapProperties,
+    public SAPServerArgs(
+            Properties sapProperties,
             TraceManager traceManager,
             boolean flattenTablesItems,
             int confirmationTimeoutMs,
-            boolean useJson, String xmlNamespace) {
+            boolean useJson,
+            String xmlNamespace,
+            boolean completeSchema) {
         this.flattenTablesItems = flattenTablesItems;
+        this.completeSchema = completeSchema;
         this.confirmationTimeoutMs = confirmationTimeoutMs;
         this.useJson = useJson;
         this.sapProperties = sapProperties;
@@ -47,6 +52,15 @@ public class SAPServerArgs {
      */
     public boolean isFlattenTablesItems() {
         return flattenTablesItems;
+    }
+
+    /**
+     * Get the complete schema flag.
+     * 
+     * @return The complete schema flag
+     */
+    public boolean isCompleteSchema() {
+        return completeSchema;
     }
 
     /**

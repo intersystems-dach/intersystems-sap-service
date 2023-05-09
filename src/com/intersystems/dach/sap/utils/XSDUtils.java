@@ -71,7 +71,7 @@ public class XSDUtils {
 
         if (!force && schemaCache.containsKey(function.getName())) {
             XSDSchema schema = schemaCache.get(function.getName());
-            if (schema.isSchemaComplete()) {
+            if (schema.isSchemaComplete() || !this.sapServerArgs.isCompleteSchema()) {
                 return schema;
             }
             tryToCompleteSchema(schema,
@@ -229,7 +229,6 @@ public class XSDUtils {
             root = sequenceItem;
         }
 
-        // TODO
         if (table.isEmpty()) {
 
             Element anyElement = doc.createElement("xs:any");
@@ -393,9 +392,10 @@ public class XSDUtils {
             throws ParserConfigurationException, SAXException, IOException, TransformerException {
         Document doc = convertStringToDocument(schema.getSchema());
 
-        boolean completeTable = false;
+        List<String> completeTableList = new ArrayList<String>();
 
         for (String incompleteTable : schema.getIncompleteTableList()) {
+            // TODO get the table from the parent
             JCoTable table = parameterList.getTable(incompleteTable);
             if (table == null) {
                 continue;
@@ -404,27 +404,16 @@ public class XSDUtils {
                 continue;
             }
 
-            Element root = null;
-            // iterate through child nodes to get the node with the name of the
-            // incomplete table
-            NodeList nodeList = doc.getDocumentElement().getChildNodes();
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                try {
-                    Node currentNode = nodeList.item(i);
-                    if (currentNode.getAttributes().getNamedItem("name").getNodeValue().equals(incompleteTable)) {
-                        root = (Element) currentNode.getParentNode();
-                        break;
-                    }
-                } catch (NullPointerException e) {
-
-                }
-            }
+            // get the root node of the table
+            Element root = (Element) getNodeByName(doc.getDocumentElement().getChildNodes(), incompleteTable);
 
             if (root == null) {
                 continue;
             }
             // remove all children of the root node
-            root.removeChild(root.getFirstChild());
+            while (root.hasChildNodes()) {
+                root.removeChild(root.getFirstChild());
+            }
             // Add a new complexType node
             Element complexTypeTable = doc.createElement("xs:complexType");
 
@@ -432,14 +421,51 @@ public class XSDUtils {
 
             root.appendChild(complexTypeTable);
 
-            completeTable = true;
-            schema.removeIncompleteTable(incompleteTable);
+            // table was completed
+            completeTableList.add(incompleteTable);
             sapServerArgs.getTraceManager().traceMessage("Table " + incompleteTable + " completed!");
         }
-        if (completeTable) {
+
+        // remove all complete tables from the incomplete table list
+        for (String completeTable : completeTableList) {
+            schema.removeIncompleteTable(completeTable);
+        }
+        // if a table was completed, set the new schema
+        if (!completeTableList.isEmpty()) {
             schema.setSchema(convertDocumentToString(doc));
         }
 
+    }
+
+    /**
+     * Get the node with the given name from the given node list.
+     * 
+     * @param nodeList The node list to search in
+     * @param name     The name of the node to search for
+     * @return The node with the given name or null if not found
+     */
+    private Node getNodeByName(NodeList nodeList, String name) {
+        if (nodeList == null) {
+            return null;
+        }
+
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node currentNode = nodeList.item(i);
+            try {
+                // return the node if the name is equal
+                if (currentNode.getAttributes().getNamedItem("name").getNodeValue().equals(name)) {
+                    return currentNode;
+                }
+            } catch (NullPointerException e) {
+                // ignore
+            }
+            // search in the child nodes
+            Node fromChildNodes = getNodeByName(currentNode.getChildNodes(), name);
+            if (fromChildNodes != null) {
+                return fromChildNodes;
+            }
+        }
+        return null;
     }
 
     /**

@@ -124,6 +124,9 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "XML", Description = "Configure the XML namespace for the generated XML. Use \"{functionName}\" as placeholder for the function name. If left empty the namespace will be generated.")
     public String XMLNamespace = "urn:isc:sap:{functionName}";
 
+    @FieldMetadata(Category = "XML", Description = "REQUIRED<br>If enabled the adapter will try to merge the Table schemas to make a complete schema.")
+    public boolean CompleteSchema = false;
+
     /**
      * ***************
      * *** Members ***
@@ -192,7 +195,8 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
                     this.FlattenTablesItems,
                     this.ConfirmationTimeoutSec * 1000,
                     this.UseJSON,
-                    this.XMLNamespace);
+                    this.XMLNamespace,
+                    this.CompleteSchema);
 
             sapServer = new SAPServer(sapServerArgs);
             sapServer.registerImportDataHandler(this);

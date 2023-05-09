@@ -9,7 +9,7 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,EnableTracing:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML,FlattenTablesItems:XML,XMLNamespace:XML";
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,EnableTracing:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML,FlattenTablesItems:XML,XMLNamespace:XML,CompleteSchema:XML";
 
 /// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
 Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
@@ -99,6 +99,9 @@ Property FlattenTablesItems As %Boolean [ InitialExpression = 0 ];
 
 /// Configure the XML namespace for the generated XML. Use "{functionName}" as placeholder for the function name. If left empty the namespace will be generated.
 Property XMLNamespace As %String(MAXLEN = "") [ InitialExpression = "urn:isc:sap:{functionName}" ];
+
+/// REQUIRED<br>If enabled the adapter will try to merge the Table schemas to make a complete schema.
+Property CompleteSchema As %Boolean [ InitialExpression = 0 ];
 
 Method %remoteClassnameGet()
 {
@@ -211,6 +214,12 @@ Method SetPropertyValues()
 	
 	Try {
 		Set $PROPERTY(..%gatewayProxy,"XMLNamespace") = ..XMLNamespace
+	} Catch ex {
+		$$$LOGWARNING(ex.DisplayString())
+	}
+	
+	Try {
+		Set $PROPERTY(..%gatewayProxy,"CompleteSchema") = ..CompleteSchema
 	} Catch ex {
 		$$$LOGWARNING(ex.DisplayString())
 	}
