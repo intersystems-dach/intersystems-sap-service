@@ -404,7 +404,7 @@ public class XSDUtils {
             }
 
             // get the root node of the table
-            Element root = (Element) getNodeByName(doc.getDocumentElement().getChildNodes(), incompleteTable);
+            Node root = getNodeByName(doc.getDocumentElement().getChildNodes(), incompleteTable);
 
             if (root == null) {
                 continue;

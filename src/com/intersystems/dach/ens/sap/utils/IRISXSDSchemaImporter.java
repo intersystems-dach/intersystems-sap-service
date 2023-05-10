@@ -113,7 +113,6 @@ public class IRISXSDSchemaImporter {
 
         knownSchemas.add(schemaId);
 
-        // TODO correct?
         if (!complete && !incompleteSchemas.contains(schemaId)) {
             incompleteSchemas.add(schemaId);
         }
