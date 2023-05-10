@@ -18,6 +18,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [Configure the service](#configure-the-service)
 -   [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
 -   [Flatten Tables Items](#flatten-tables-items)
+-   [Complete Schema](#complete-schema)
 -   [Settings](#settings)
     -   [SAP Service](#sap-service)
     -   [SAP Server Settings](#sap-server-settings)
@@ -25,7 +26,6 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [XML](#xml)
     -   [Remote Inbound Adapter Settings](#remote-inbound-adapter-settings)
 -   [Bugs](#bugs)
--   [Release Notes](#release-notes)
 
 ---
 
@@ -203,6 +203,119 @@ And the corresponding schema would look like this:
 
 ---
 
+## Complete Schema
+
+The service will automatically generate a complete schema for the SAP function module. The service remembers which tables are empty and will write a generic schema for this table. If the table is not empty, the service will write a schema for the table and replace it with generic schema.
+
+Example:
+
+First call from the function, where `Table1` is empty:
+
+```xml
+...
+<xs:element name="FunctionName">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Table1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:any maxOccurs="unbounded" minOccurs="0" processContents="skip"></xs:any> <!-- generic schema -->
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Table2">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" name="item">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        ...
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+...
+```
+
+Second call from the function, where `Table2` is empty:
+
+```xml
+...
+<xs:element name="FunctionName">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Table1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" name="item">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        ...
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Table2">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:any maxOccurs="unbounded" minOccurs="0" processContents="skip"></xs:any> <!-- generic schema -->
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+...
+```
+
+Both calls merged:
+
+```xml
+...
+<xs:element name="FunctionName">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Table1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" name="item">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        ...
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Table2">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" minOccurs="0" name="item">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        ...
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+...
+```
+
+---
+
 ## Settings
 
 ### SAP Service
@@ -233,9 +346,10 @@ And the corresponding schema would look like this:
 
 -   `ImportXMLSchemas` _boolean_ - If enabled, the service will try to import the XML Schemas from the SAP System. _(default: false)_
 -   `XMLSchemaPath` _string_ - The path to the folder where the XML Schemas should be stored. If the folder does not exist, it will be created.
--   `LookUpTableName` _string_ - The name of the table you configured in [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas). If left empty no lookup table will be used.
 -   `FlattenTablesItems` _boolean_ - If enabled, the service will flatten the tables in the XML. See [Flatten Tables Items](#flatten-tables-items) for more information _(default: false)_
--   `XMLNamespace` _string_ - The namespace of the XML. If left empty no namespace will be used. You can use the placeholder `{functionName}` to use the name of the function as namespace.
+-   `XMLNamespace` _string_ - The namespace of the XML. If left empty no namespace will be used. You can use the placeholder `{functionName}` to use the name of the function as namespace. _(default: urn:isc:sap:{functionName})_
+-   `CompleteSchema` _boolean_ - If enabled, the service will try to complete the XML Schema with the XML Schemas from the SAP System. See [here](#complete-schema) for more information. _(default: false)_
+-   `LookUpTableName` _string_ - The name of the table you configured in [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas). If left empty no lookup table will be used.
 
 ### Remote Inbound Adapter Settings
 
@@ -251,13 +365,13 @@ And the corresponding schema would look like this:
 
 -   _no known bugs_
 
----
+<!-- ---
 
 ## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
 
 ### [v1.0.0](https://github.com/phil1436/intersystems-sap-service/tree/1.0.0)
 
--   _Initial release_
+-   _Initial release_ -->
 
 ---
 
