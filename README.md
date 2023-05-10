@@ -16,6 +16,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
     -   [Setup a service](#setup-a-service)
     -   [Configure InterSystems Credentials](#configure-intersystems-credentials)
     -   [Configure the service](#configure-the-service)
+-   [Set Default Values](#set-default-values)
 -   [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
 -   [Flatten Tables Items](#flatten-tables-items)
 -   [Complete Schema](#complete-schema)
@@ -109,6 +110,12 @@ An InterSystems SAP Business Service to receive from a SAP System.
 8. Start the service
 
 > **Tip:** You can see if the service could be successfully started in the _Log_ tab of the service.
+
+---
+
+## Set Default Values
+
+You can set your default values [here](SetDefaultValues/index.html). This website will generate the _com.intersystems.dach.ens.sap.InboundAdapter_ with your set values so you dont have to configure them every time you create a new service.
 
 ---
 

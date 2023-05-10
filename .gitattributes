@@ -4,3 +4,4 @@
 .gitignore export-ignore
 CHANGELOG.md export-ignore
 resources/** export-ignore
+SetDefaultValues/** export-ignore

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>SetDefaultValues</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+            rel="stylesheet" />
+        <style>
+            body {
+                margin-top: 20px;
+                margin-left: 100px;
+                margin-bottom: 100px;
+                font-size: 15px;
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri,
+                    'Trebuchet MS', sans-serif;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #09091a;
+                    color: white;
+                }
+            }
+            @media only screen and (max-width: 600px) {
+                body {
+                    margin-left: 10px;
+                }
+                p {
+                    font-size: 15px;
+                }
+            }
+            input {
+                cursor: pointer;
+                border: none;
+                margin-left: 10px;
+            }
+            button {
+                cursor: pointer;
+                background-color: #00b5af; /* Green */
+                border: none;
+                color: white;
+                text-align: center;
+                text-decoration: none;
+                font-size: 16px;
+                height: 40px;
+            }
+            button:hover {
+                background-color: #333695; /* Green */
+            }
+            .textInput {
+                width: 300px;
+                cursor: text;
+            }
+            .export {
+                display: none;
+            }
+            .buttons {
+                margin-top: 30px;
+                display: flex;
+                justify-content: space-between;
+                max-width: 300px;
+            }
+            h2 {
+                color: #333695;
+            }
+            h1 {
+                color: #00b5af;
+            }
+            .instruction {
+                margin-top: 30px;
+                display: none;
+            }
+            p {
+                font-size: 20px;
+            }
+        </style>
+        <script src="main.js"></script>
+    </head>
+    <body>
+        <h1>InterSystems SAP Service <i>Set-Default-Values</i></h1>
+        <p>
+            Here you can set your default configuration values for your
+            InterSystems SAP Service.
+        </p>
+
+        <h2>SAP Service</h2>
+
+        <label>UseJSON:</label>
+        <input type="checkbox" id="UseJSON" /><br /><br />
+        <label>ConfirmationTimeoutSec:</label>
+        <input
+            type="number"
+            id="ConfirmationTimeoutSec"
+            value="10" /><br /><br />
+        <label>EnableTesting:</label>
+        <input type="checkbox" id="EnableTesting" /><br /><br />
+        <label>EnableTracing:</label>
+        <input type="checkbox" id="EnableTracing" /><br /><br />
+        <label>QueueWarningThreshold:</label>
+        <input
+            type="number"
+            id="QueueWarningThreshold"
+            value="100" /><br /><br />
+
+        <h2>SAP Server Settings</h2>
+
+        <label>GatewayHost:</label>
+        <input type="text" id="GatewayHost" class="textInput" /><br /><br />
+        <label>GatewayService:</label>
+        <input type="text" id="GatewayService" class="textInput" /><br /><br />
+        <label>ConnectionCount:</label>
+        <input type="number" id="ConnectionCount" value="4" /><br /><br />
+
+        <h2>SAP Client Settings</h2>
+
+        <label>HostAddress:</label>
+        <input type="text" id="HostAddress" class="textInput" /><br /><br />
+        <label>ClientID:</label>
+        <input type="text" id="ClientID" class="textInput" /><br /><br />
+        <label>SystemNumber:</label>
+        <input type="text" id="SystemNumber" class="textInput" /><br /><br />
+        <label>SAPLanguage:</label>
+        <input type="text" id="SAPLanguage" class="textInput" /><br /><br />
+        <label>SAPCredentials:</label>
+        <input type="text" id="SAPCredentials" class="textInput" /><br /><br />
+
+        <h2>XML</h2>
+
+        <label>ImportXMLSchemas:</label>
+        <input type="checkbox" id="ImportXMLSchemas" /><br /><br />
+        <label>XMLSchemaPath:</label>
+        <input type="text" id="XMLSchemaPath" class="textInput" /><br /><br />
+        <label>FlattenTablesItems:</label>
+        <input type="checkbox" id="FlattenTablesItems" /><br /><br />
+        <label>XMLNamespace:</label>
+        <input
+            type="text"
+            id="XMLNamespace"
+            value="urn:isc:sap:{functionName}"
+            class="textInput" /><br /><br />
+        <label>CompleteSchema:</label>
+        <input type="checkbox" id="CompleteSchema" /><br /><br />
+        <label>LookUpTableName:</label>
+        <input type="text" id="LookUpTableName" class="textInput" /><br /><br />
+
+        <div class="buttons">
+            <button onclick="submit()" id="submitButton">Submit</button>
+            <button onclick="copyToClipboard()" class="export" id="copyButton">
+                Copy to Clipboard
+            </button>
+            <button onclick="downloadFile()" class="export" id="downloadButton">
+                Download
+            </button>
+        </div>
+
+        <p class="instruction" id="copyInstruction">
+            Copied to Clipboard! You can now replace the code of the
+            <code>com.intersystems.dach.ens.sap.InboundAdapter</code> class with
+            the copied code.
+        </p>
+        <p class="instruction" id="downloadInstruction">
+            <code>com.intersystems.dach.ens.sap.InboundAdapter</code>
+            downloaded! In the Management Portal, navigate to
+            <i>System Explorer > Classes</i> click on <i>Import</i> to import
+            the downloaded class.
+        </p>
+    </body>
+</html>
