@@ -1,8 +1,17 @@
-<img src = "resources/logo.png" title = "logo" width = "50%"/>
+<div align="center">
+    <br />
+    <img src = "resources/logo.png" title = "logo" width = "40%"/>
+    <h1>InterSystems SAP Service</h1>
+    <p>An InterSystems SAP Business Service to receive from a SAP System.</p>
+</div>
 
-# InterSystems SAP Service
+<div align="center">
 
-An InterSystems SAP Business Service to receive from a SAP System.
+[![current release](https://img.shields.io/github/v/release/phil1436/intersystems-sap-service?display_name=tag)](https://github.com/phil1436/intersystems-sap-service/releases)
+[![license](https://img.shields.io/github/license/phil1436/intersystems-sap-service)](https://github.com/phil1436/intersystems-sap-service/blob/main/LICENSE)
+![last commit](https://img.shields.io/github/last-commit/phil1436/intersystems-sap-service)
+
+</div>
 
 ---
 
