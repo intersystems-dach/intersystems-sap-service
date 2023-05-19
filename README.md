@@ -9,15 +9,16 @@
     <a href="https://github.com/phil1436/intersystems-sap-service/releases">
         <img src= "https://img.shields.io/github/v/release/phil1436/intersystems-sap-service?display_name=tag" alt="current release">
     </a>
-    <a href="https://github.com/phil1436/intersystems-sap-service/blob/master/LICENSE">
+    <a href="https://github.com/phil1436/intersystems-sap-service/blob/main/LICENSE">
         <img src="https://img.shields.io/github/license/phil1436/intersystems-sap-service" alt="license">
     </a>
     <!-- <a href="https://github.com/phil1436/intersystems-sap-service/stargazers">
         <img src="https://img.shields.io/github/stars/phil1436/intersystems-sap-service" alt="stars">
     </a> -->
-    <a href="https://github.com/phil1436/intersystems-sap-service/commits/master">
+    <a href="https://github.com/phil1436/intersystems-sap-service/commits/main">
         <img src="https://img.shields.io/github/last-commit/phil1436/intersystems-sap-service" alt="last commit">
     </a>
+    <img src="https://img.shields.io/github/languages/top/phil1436/intersystems-sap-service" alt="top language">
 </div>
 
 ---
