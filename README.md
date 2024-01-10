@@ -57,7 +57,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ### Download the latest release
 
-1. Download the _intersystems-sap-service-\*.jar_ file from the [latest release](https://github.com/phil1436/intersystems-sap-service/releases/latest)
+1. Download the _intersystems-sap-service-\*.jar_ file from the [latest release](https://github.com/intersystems-dach/intersystems-sap-service/releases/latest)
 2. Save the file to a folder visible to the InterSystems IRIS instance
 
 ### Setup an external language server
@@ -253,12 +253,12 @@ And the corresponding schema would look like this:
 
 ---
 
-## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
+## [Release Notes](https://github.com/intersystems-dach/intersystems-sap-service/blob/master/CHANGELOG.md)
 
-### [v1.0.0](https://github.com/phil1436/intersystems-sap-service/tree/1.0.0)
+### [v1.0.0](https://github.com/intersystems-dach/intersystems-sap-service/tree/1.0.0)
 
 -   _Initial release_
 
 ---
 
-by [Andreas S.](https://github.com/a-schuetz) and [Philipp B.](https://github.com/phil1436)
+by [Andreas S.](https://github.com/a-schuetz) and [Philipp B.](https://github.com/cophilot)

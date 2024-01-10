@@ -39,7 +39,7 @@ import com.sap.conn.jco.server.JCoServerState;
  * @author Philipp Bonin, Andreas Schütz
  * @version 1.0
  */
-@ClassMetadata(Description = "A InterSystems InboundAdapter to receive messages from a SAP system.", InfoURL = "https://github.com/phil1436/intersystems-sap-service")
+@ClassMetadata(Description = "A InterSystems InboundAdapter to receive messages from a SAP system.", InfoURL = "https://github.com/intersystems-dach/intersystems-sap-service")
 public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         implements SAPServerImportDataHandler, SAPServerErrorHandler, SAPServerExceptionHandler, SAPServerStateHandler {
 
