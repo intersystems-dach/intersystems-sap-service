@@ -9,10 +9,7 @@ Parameter %REMOTECLASSNAME = "com.intersystems.dach.ens.sap.InboundAdapter";
 
 // TODO: Hide EnableTesting for productive release.
 
-Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,EnableTracing:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML,FlattenTablesItems:XML,XMLNamespace:XML";
-
-/// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Remote Gateway
-Property %gatewayExtraClasspaths As %String(MAXLEN = "") [ InitialExpression = "intersystems-sap-service.jar" ];
+Parameter SETTINGS = "-%remoteClassname,-%remoteSettings,-%gatewayExtraClasspaths,-%gatewayPort,-%gatewayHost,-%gatewayTimeout,-%useHostConnection,UseJSON:SAP Service,ConfirmationTimeoutSec:SAP Service,EnableTesting:SAP Service,EnableTracing:SAP Service,QueueWarningThreshold:SAP Service,GatewayHost:SAP Server Settings,GatewayService:SAP Server Settings,ProgrammID:SAP Server Settings,ConnectionCount:SAP Server Settings,Repository:SAP Server Settings,HostAddress:SAP Client Settings,ClientID:SAP Client Settings,SystemNumber:SAP Client Settings,SAPLanguage:SAP Client Settings,SAPCredentials:SAP Client Settings,ImportXMLSchemas:XML,XMLSchemaPath:XML,FlattenTablesItems:XML,XMLNamespace:XML";
 
 /// External Language Server Name
 Property %gatewayName As %String [ InitialExpression = "%Java Server", Internal ];
@@ -27,9 +24,11 @@ Property %remoteLanguage As %String [ InitialExpression = "JAVA", Internal ];
 /// If true, this supersedes the External Language Server this Adapter was registered with.
 Property %useHostConnection As %Boolean [ InitialExpression = 0, Internal ];
 
-//	*****************
-//	***SAP Service***
-//	*****************
+// 	*****************
+
+// 	***SAP Service***
+
+// 	*****************
 
 /// If enabled the service will return a JSON object instead of a XML object
 Property UseJSON As %Boolean [ InitialExpression = "false" ];
@@ -46,9 +45,11 @@ Property EnableTracing As %Boolean [ InitialExpression = 0 ];
 /// REQUIRED<br>The maximum number of messages that can be queued for processing. If the queue is full, the adapter will print a warning and increase the throughput.
 Property QueueWarningThreshold As %Integer(MAXVAL = 10000, MINVAL = 1) [ InitialExpression = 100, Required ];
 
-//	*************************
-//	***SAP Server Settings***
-//	*************************
+// 	*************************
+
+// 	***SAP Server Settings***
+
+// 	*************************
 
 /// REQUIRED<br>Set the gateway host address. The gateway host address is used to connect to the SAP system.
 Property GatewayHost As %String(MAXLEN = "") [ Required ];
@@ -65,9 +66,11 @@ Property ConnectionCount As %Integer [ InitialExpression = 4, Required ];
 /// Set the repository destination. The repository destination is used to connect to the SAP system. Usually 'SAP' or 'SAP_TEST
 Property Repository As %String(MAXLEN = "");
 
-//	*************************
-//	***SAP Client Settings***
-//	*************************
+// 	*************************
+
+// 	***SAP Client Settings***
+
+// 	*************************
 
 /// REQUIRED<br>Set the host address. The host address is used to connect to the SAP system.
 Property HostAddress As %String(MAXLEN = "") [ Required ];
@@ -84,9 +87,11 @@ Property SAPLanguage As %String [ Required ];
 /// This is the ID name of the set of credentials values to be used to access the external system
 Property SAPCredentials As %String;
 
-//	*********
-//	***XML***
-//	*********
+// 	*********
+
+// 	***XML***
+
+// 	*********
 
 /// If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.
 Property ImportXMLSchemas As %Boolean [ InitialExpression = 0 ];

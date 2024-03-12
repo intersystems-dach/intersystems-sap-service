@@ -64,7 +64,7 @@ ClassMethod OnGetConnections(Output pArray As %String, pItem As Ens.Config.Item)
 /// <li>pLookUpTableName: The LookUp Table name</li>
 /// <li><b>returns</b>: The value or an empty String if the value could not be found</li>
 /// <EXAMPLE> Do ##class(com.intersystems.dach.ens.sap.PassthroughService).GetLookUpTableEntry("MyKey", "MyTableName")</EXAMPLE>
-ClassMethod GetLookUpTableEntry(pKey as %String, pLookUpTableName as %String) As %String
+ClassMethod GetLookUpTableEntry(pKey As %String, pLookUpTableName As %String) As %String
 {
    
    // TODO
@@ -109,7 +109,6 @@ ClassMethod GetLookUpTableEntry(pKey as %String, pLookUpTableName as %String) As
 	}
 
    Return result
-
 }
 
 }
