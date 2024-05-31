@@ -6,8 +6,6 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.intersystems.dach.ens.common.annotations.ClassMetadata; //intersystems-util-3.2.x or older
-import com.intersystems.dach.ens.common.annotations.FieldMetadata; //intersystems-util-3.2.x or older
 import com.intersystems.dach.ens.sap.testing.TestCase;
 import com.intersystems.dach.ens.sap.testing.TestRunner;
 import com.intersystems.dach.ens.sap.testing.TestCaseCollection;
@@ -24,8 +22,8 @@ import com.intersystems.dach.sap.handlers.SAPServerExceptionHandler;
 import com.intersystems.dach.sap.handlers.SAPServerImportDataHandler;
 import com.intersystems.dach.sap.handlers.SAPServerStateHandler;
 import com.intersystems.dach.utils.TraceManager;
-//import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
-//import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
+import com.intersystems.enslib.pex.ClassMetadata; //intersystems-util-3.3.0 or newer
+import com.intersystems.enslib.pex.FieldMetadata; //intersystems-util-3.3.0 or newer
 import com.intersystems.gateway.GatewayContext;
 import com.intersystems.jdbc.IRIS;
 import com.intersystems.jdbc.IRISObject;
@@ -385,24 +383,6 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
         if (this.EnableTracing) {
             traceBuffer.add("SAP server state changed from " + oldState.toString() + " to " + newState.toString());
         }
-    }
-
-    /**
-     * This is a workaround to handle a bug in IRIS < 2022.1
-     * 
-     * @param hostObject
-     * @throws java.lang.Exception
-     */
-    public void dispatchOnInit(com.intersystems.jdbc.IRISObject hostObject) throws java.lang.Exception {
-        _dispatchOnInit(hostObject);
-    }
-
-    /**
-     * This is a workaround to handle a bug in IRIS < 2022.1
-     */
-    public void _setIrisHandles(com.intersystems.jdbc.IRISObject handleCurrent,
-            com.intersystems.jdbc.IRISObject handlePartner) {
-        setIrisHandles(handleCurrent, handlePartner);
     }
 
     /**

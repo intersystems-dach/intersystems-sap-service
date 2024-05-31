@@ -6,26 +6,29 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ---
 
--   [Overview](#overview)
--   [Dependencies](#dependencies)
--   [Requirements](#requirements)
--   [Installation](#installation)
-    -   [Download the latest release](#download-the-latest-release)
-    -   [Setup an external language server](#setup-an-external-language-server)
-    -   [Import proxy classes](#import-proxy-classes)
-    -   [Setup a service](#setup-a-service)
-    -   [Configure InterSystems Credentials](#configure-intersystems-credentials)
-    -   [Configure the service](#configure-the-service)
--   [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
--   [Flatten Tables Items](#flatten-tables-items)
--   [Settings](#settings)
-    -   [SAP Service](#sap-service)
-    -   [SAP Server Settings](#sap-server-settings)
-    -   [SAP Client Settings](#sap-client-settings)
-    -   [XML](#xml)
-    -   [Remote Inbound Adapter Settings](#remote-inbound-adapter-settings)
--   [Bugs](#bugs)
--   [Release Notes](#release-notes)
+- [InterSystems SAP Service](#intersystems-sap-service)
+  - [Overview](#overview)
+  - [Dependencies](#dependencies)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+    - [Download the latest release](#download-the-latest-release)
+    - [Setup an external language server](#setup-an-external-language-server)
+    - [Import proxy classes](#import-proxy-classes)
+    - [Setup a service](#setup-a-service)
+    - [Configure InterSystems Credentials](#configure-intersystems-credentials)
+    - [Configure the service](#configure-the-service)
+  - [Lookup Table for XML Schemas](#lookup-table-for-xml-schemas)
+  - [Flatten Tables Items](#flatten-tables-items)
+  - [Settings](#settings)
+    - [SAP Service](#sap-service)
+    - [SAP Server Settings](#sap-server-settings)
+    - [SAP Client Settings](#sap-client-settings)
+    - [XML](#xml)
+    - [Remote Inbound Adapter Settings](#remote-inbound-adapter-settings)
+  - [Bugs](#bugs)
+  - [Release Notes](#release-notes)
+    - [v0.1 (2024-03-11)](#v01-2024-03-11)
+    - [v0.0.6 (2023-4-3)](#v006-2023-4-3)
 
 ---
 
@@ -38,8 +41,8 @@ An InterSystems SAP Business Service to receive from a SAP System.
 ## Dependencies
 
 -   [sapco.jar](https://support.sap.com/en/product/connectors/jco.html) _3.0.11 or higher_
--   intersystems-jdbc.jar _3.2.0 or older_
--   intersystems-utils.jar _3.2.0 or older_
+-   intersystems-jdbc.jar
+-   intersystems-utils.jar
 
 > **Note:** The _intersystems-jdbc.jar_ and _intersystems-utils.jar_ are included in the InterSystems IRIS installation. You can find them in the `~/dev/java` folder.
 
@@ -47,7 +50,7 @@ An InterSystems SAP Business Service to receive from a SAP System.
 
 ## Requirements
 
--   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2021.1 or newer_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2021.1 or newer_
+-   [InterSystems IRIS](https://www.intersystems.com/products/intersystems-iris/) _2022.1 or newer_ or [InterSystems IRIS for Health](https://www.intersystems.com/products/intersystems-iris-for-health/) _2022.1 or newer_
 -   An interoperability enabled namespace
 -   Java JDK _1.8_ or _11_
 
@@ -65,11 +68,12 @@ An InterSystems SAP Business Service to receive from a SAP System.
 1. In the Management Portal navigate to _System Administration > Configuration > Connectivity > External Language Servers_
 2. Click on _Create External Language Server_ or configure the standard _%Java Server_ server by double-clicking on the server name
 3. Select _Java_ as the _Server Type_
-4. Select the _sapjco.jar_ in the _Class Path_ field. **The _sapjco.dll_ must be in the same folder as the _sapjco.jar_ file**
-5. Select the _intersystems-sap-service-\*.jar_ in the _Class Path_ field and with a Semi-colon (;) for Windows-Systems and a colon (:) for UNIX-Systems separate the _sapjco.jar_ and the _intersystems-sap-service-\*.jar_ file
-6. Select the jdk folder in the _Java Home Directory_ field
-7. Click on _Save_
-8. Click on _Start_ next to the server you just created
+4. Select the current _intersystems-utils-x.x.x.jar_ in the classpath field. This file comes with your InterSystems IRIS installation. It can be found in  `<irissys>/dev/java/lib/1.8/`. Seperate all additonal class paths with a Semi-colon (;) for Windows-Systems (_e.g. /pathA/1.jar;/pathB/2.jar;/pathC/3.jar_) and a colon (:) for UNIX-Systems (_e.g. /pathA/1.jar:/pathB/2.jar:/pathC/3.jar_).
+5. Select the _sapjco.jar_ in the _Class Path_ field. **The _sapjco.dll_ must be in the same folder as the _sapjco.jar_ file**
+6. Select the intersystems-utils.jar _intersystems-sap-service-\*.jar_ in the _Class Path_ field.
+7. Select the jdk folder in the _Java Home Directory_ field
+8. Click on _Save_
+9. Click on _Start_ next to the server you just created
 
 > **Note:** This step is namespace independent. You can use the same server in multiple namespaces.
 
@@ -253,12 +257,19 @@ And the corresponding schema would look like this:
 
 ---
 
-## [Release Notes](https://github.com/intersystems-dach/intersystems-sap-service/blob/master/CHANGELOG.md)
+## [Release Notes](https://github.com/phil1436/intersystems-sap-service/blob/master/CHANGELOG.md)
 
-### [v1.0.0](https://github.com/intersystems-dach/intersystems-sap-service/tree/1.0.0)
+### [v0.1](https://github.com/intersystems-dach/intersystems-sap-service/tree/0.1) (2024-03-11)
+
+- Adds compatibility to InterSystems IRIS version 2022.1 and newer
+- Removes intersystems-utils and intersystems-jdbr java library from jar. Intersystems-utils must be added to class path manually.
+- Use v0.0.6 for InterSystems IRIS versions older than 2022.1
+
+### [v0.0.6](https://github.com/intersystems-dach/intersystems-sap-service/tree/0.0.6) (2023-4-3)
 
 -   _Initial release_
 
+
 ---
 
-by [Andreas S.](https://github.com/a-schuetz) and [Philipp B.](https://github.com/cophilot)
+by [Andreas S.](https://github.com/a-schuetz) and [Philipp B.](https://github.com/phil1436)
