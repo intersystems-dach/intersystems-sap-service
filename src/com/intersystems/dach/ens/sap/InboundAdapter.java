@@ -109,6 +109,25 @@ public class InboundAdapter extends com.intersystems.enslib.pex.InboundAdapter
     @FieldMetadata(Category = "SAP Client Settings", IsRequired = true, Description = "REQUIRED<br>Set the password. The password is used to connect to the SAP system.")
     public String Password = "";
 
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SNC_MODE)
+    @FieldMetadata(Category = "SAP Client Settings", Description = "Enable SNC. 1 true 0 false")
+    public int SncMode = 0;
+
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SNC_PARTNERNAME)
+    @FieldMetadata(Category = "SAP Client Settings", Description = "Make sure in ABAP system you have one dedicated user with same SNC name as external java program via t-code SU01.")
+    public String SncPartnername = "";
+
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SNC_QOP)
+    @FieldMetadata(Category = "SAP Client Settings", Description = "1 - Apply authentication only.2 - Apply authentication and integrity protection3 - Apply authentication, integrity, and privacy protection (encryption)8 - Apply global default protection (usually 3)9 - Apply the maximum protection.")
+    public int SncQop = 0;
+
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SNC_MYNAME)
+    @FieldMetadata(Category = "SAP Client Settings", Description = "Subject from the generated Certificate. Example CN=JCO3,O=SAP,C=DE ")
+    public String SncMyname = "";
+
+    @SAPJCoPropertyAnnotation(jCoName = DestinationDataProvider.JCO_SNC_LIBRARY)
+    @FieldMetadata(Category = "SAP Client Settings", Description = "Location of the SAP Crypto Lib")
+    public String SncLib = "";
     // XML
     @FieldMetadata(Category = "XML", Description = "If enabled new XML schemas will be saved and imported to the production automatically. If UseJson is enabled this will be ignored.")
     public boolean ImportXMLSchemas = false;
